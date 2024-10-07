@@ -8,6 +8,7 @@ const msg = require('../helpers/messages.json');
 
 const multer = require('multer');
 
+router.post('/signin', authenticate);
 // router.post('/signup', registerValidation, register);
 // router.post('/forgot-password', forgotPassword);
 // router.put('/update-profile-details/:id', updateProfileDetails);
@@ -33,3 +34,34 @@ function register(req, res, next) {
     .then(user => user ? res.status(201).json({ status: true, message: msg.user.signup.success, data: user }) : res.status(400).json({ status: false, message: msg.user.signup.error }))
     .catch(err => next(res.status(400).json({ status: false, message: err })));
 }
+
+/**
+ * Function authenticate the user
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ *
+ * @return JSON|null
+ */
+
+function authenticate(req, res, next) {
+    commonService
+      .authenticate(req.body)
+      .then((user) =>
+        user
+          ? console.log(user) || (user && user.is_active == true)
+            ? res.json({
+                status: true,
+                message: msg.user.login.success,
+                data: user,
+              })
+            : res
+                .status(400)
+                .json({ status: false, message: msg.user.login.active })
+          : res.status(400).json({ status: false, message: msg.user.login.error })
+      )
+      .catch((err) => next(err));
+  }
+  /*****************************************************************************************/
+  /*****************************************************************************************/
