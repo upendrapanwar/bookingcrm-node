@@ -8,7 +8,7 @@ const msg = require('../helpers/messages.json');
 
 const multer = require('multer');
 
-router.post('/signin', authenticate);
+router.post('/register', register);
 // router.post('/signup', registerValidation, register);
 // router.post('/forgot-password', forgotPassword);
 // router.put('/update-profile-details/:id', updateProfileDetails);
