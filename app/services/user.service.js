@@ -7,19 +7,19 @@
  */
 
 const config = require('../config/index');
-const axios = require('axios');
-const https = requrie('https');
-const moongoose = require('mongoose');
-moongoose.connect(process.env.MONGODB_URI || config.connectionString,{
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+//const axios = require('axios');
+//const https = requrie('https');
+// const moongoose = require('mongoose');
+// moongoose.connect(process.env.MONGODB_URI || config.connectionString,{
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+// });
 
-mongoose.Promise = global.Promise;
+//mongoose.Promise = global.Promise;
 
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const path = require("path");
+// const fs = require("fs");
+// const path = require("path");
 const bcrypt = require("bcryptjs");
 
 const msg = require("../helpers/messages.json");
@@ -38,17 +38,21 @@ module.exports = {
 /*****************************************************************************************/
 
 async function create(param) {
+  console.log('param--',param)
     try {
       if (await User.findOne({ email: param.email })) {
         throw 'email "' + param.email + '" is already taken';
+        //return false;
       }
   
       const user = new User({
-        firstname: param.firstname,
-        surname: param.surname,
+        first_name: param.name,
+        //surname: param.surname,
         email: param.email,
         password: bcrypt.hashSync(param.password, 10),
-        role: "learner",
+        role: "student",
+        phone :param.phone_number,
+        gender :param.gender,
         isActive: true,
         is_blocked: false,
       });
@@ -94,7 +98,7 @@ async function create(param) {
    */
   async function authenticate({ email, password }) {
     const user = await User.findOne({ email });
-  
+  //console.log('api run---',user)
     if (user && bcrypt.compareSync(password, user.password)) {
       const {
         password,

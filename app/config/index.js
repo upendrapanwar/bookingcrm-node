@@ -2,8 +2,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 module.exports = {
-   app_env: process.env.APP_ENV,
-//   local_port: process.env.LOCAL_PORT,
+  app_env: process.env.APP_ENV,
+  local_port: process.env.LOCAL_PORT,
 //   dev_port: process.env.DEV_PORT,
 //   local_url: process.env.LOCAL_URL,
 //   dev_url: process.env.DEV_URL,
@@ -11,7 +11,7 @@ module.exports = {
 //   react_dev_url: process.env.REACT_DEV_URL,
   connectionString: process.env.CONNECTION_STRING,
 //   uploadDir: process.env.UPLOAD_DIR,
-//   secret: process.env.SECRET,
+  secret: process.env.SECRET,
 //   verif_min: process.env.VERIF_MIN,
 //   mail_host: process.env.MAIL_HOST,
 //   mail_port: process.env.MAIL_PORT,

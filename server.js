@@ -1,12 +1,3 @@
-// require('dotenv').config();
-
-
-
-
-
-
-
-
 
 require("rootpath")();
 const express = require("express");
@@ -20,11 +11,8 @@ const package = require("package.json");
 const app = express();
 const https = require("https");
 const fs = require("fs");
-// const { ChatMessage } = require("../payearth-api/app/helpers/db");
 // const setupSocket1 = require("./app/helpers/socket-io");
 // const socketIo = require("socket.io");
-// const NotificationController = require('./app/controllers/notification.controller');
-
 
 const mongoose = require('mongoose');
 
@@ -71,7 +59,7 @@ app.use((req, res, next) => {
 // app.use("/front", require("./app/controllers/front.controller"));
 // app.use("/community", require("./app/controllers/community.controller"));
 // app.use("/admin", require("./app/controllers/admin.controller"));
-// app.use("/user", require("./app/controllers/user.controller"));
+app.use("/user", require("./app/controllers/user.controller.js"));
 // app.use("/seller", require("./app/controllers/seller.controller"));
 app.use(
   "/" + config.uploadDir,
