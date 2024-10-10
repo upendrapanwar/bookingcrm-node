@@ -30,10 +30,6 @@ module.exports = router;
  * @return JSON|null
  */
 // function register(req, res, next) {
-//     userService.create(req.body)
-//     .then(user => user ? res.status(201).json({ status: true, message: msg.user.signup.success, data: user }) : res.status(400).json({ status: false, message: msg.user.signup.error }))
-//     .catch(err => next(res.status(400).json({ status: false, message: err })));
-// }
 function register(req, res, next) {
   userService
     .create(req.body)

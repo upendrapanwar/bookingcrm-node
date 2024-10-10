@@ -26,7 +26,8 @@ const msg = require("../helpers/messages.json");
 
 const {
     User,
-} = require("../helpers/db");
+    Courses,
+  } = require("../helpers/db");
 
 module.exports = {
     create,
@@ -38,7 +39,7 @@ module.exports = {
 /*****************************************************************************************/
 
 async function create(param) {
-  console.log('param--',param)
+ // console.log('param--',param)
     try {
       if (await User.findOne({ email: param.email })) {
         throw 'email "' + param.email + '" is already taken';
@@ -46,11 +47,11 @@ async function create(param) {
       }
   
       const user = new User({
-        first_name: param.name,
-        //surname: param.surname,
+        first_name: param.firstName,
+        last_name: param.lastName,
         email: param.email,
         password: bcrypt.hashSync(param.password, 10),
-        role: "student",
+        role: param.role,
         phone :param.phone_number,
         gender :param.gender,
         isActive: true,
@@ -116,7 +117,7 @@ async function create(param) {
       expTime.setHours(expTime.getHours() + 2); //2 hours token expiration time
       //expTime.setMinutes(expTime.getMinutes() + 2);
       expTime = expTime.getTime();
-      console.log('user', user);
+     // console.log('user', user);
       return {
         ...userWithoutHash,
         token,
