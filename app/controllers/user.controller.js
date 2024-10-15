@@ -10,6 +10,7 @@ const msg = require('../helpers/messages.json');
 
 router.post('/signin', authenticate);
 router.post('/signup',  register);   //registerValidation,
+router.get('/get-all-users', getAllUsers);   //registerValidation,
 // router.post('/forgot-password', forgotPassword);
 // router.put('/update-profile-details/:id', updateProfileDetails);
 // router.put('/update-ambassador-profile-details/:id', updateAmbassadorProfileDetails);
@@ -50,7 +51,8 @@ function register(req, res, next) {
       next(res.status(400).json({ status: false, message: err }))
     );
 }
-
+/*****************************************************************************************/
+/*****************************************************************************************/
 /**
  * Function authenticate the user
  *
@@ -82,3 +84,19 @@ function authenticate(req, res, next) {
   }
   /*****************************************************************************************/
   /*****************************************************************************************/
+  /**
+ * Function to get all the user list
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function getAllUsers(req, res, next) {
+  userService.getAllUsers(req.params)
+      .then(allUsers => allUsers ? res.status(200).json({ status: true, data: allUsers }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
