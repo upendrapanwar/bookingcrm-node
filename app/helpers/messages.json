@@ -38,5 +38,17 @@
             "error": "Data not found."
         }
 
-    } 
+    },
+
+    "admin": {
+        "add_course": {
+            "success": "Course added successfully.",
+            "error": "Failed to add course."
+        },
+        "get_course": {
+            "success": "Courses get successfully.",
+            "error": "Failed to get courses."
+        }
+
+    }
 }

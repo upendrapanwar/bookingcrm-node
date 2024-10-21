@@ -58,7 +58,7 @@ app.use((req, res, next) => {
 // Require routes
 // app.use("/front", require("./app/controllers/front.controller"));
 // app.use("/community", require("./app/controllers/community.controller"));
-// app.use("/admin", require("./app/controllers/admin.controller"));
+app.use("/admin", require("./app/controllers/admin.controller"));
 app.use("/user", require("./app/controllers/user.controller.js"));
 // app.use("/seller", require("./app/controllers/seller.controller"));
 app.use(

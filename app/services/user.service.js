@@ -32,7 +32,7 @@ const {
 module.exports = {
     create,
     authenticate,
-    
+    getAllUsers
 };
 
 /*****************************************************************************************/
@@ -99,7 +99,7 @@ async function create(param) {
    */
   async function authenticate({ email, password }) {
     const user = await User.findOne({ email });
-  //console.log('api run---',user)
+  
     if (user && bcrypt.compareSync(password, user.password)) {
       const {
         password,
@@ -117,7 +117,7 @@ async function create(param) {
       expTime.setHours(expTime.getHours() + 2); //2 hours token expiration time
       //expTime.setMinutes(expTime.getMinutes() + 2);
       expTime = expTime.getTime();
-     // console.log('user', user);
+     
       return {
         ...userWithoutHash,
         token,
@@ -126,5 +126,21 @@ async function create(param) {
     } 
   }
   
+  /*****************************************************************************************/
+  /*****************************************************************************************/
+  /**
+   * Get All Users
+   *
+   * @param null
+   *
+   * @returns Object|null
+   */
+  async function getAllUsers() {
+    const result = await User.find().select().sort({ createdAt: 'desc' });
+    
+    if (result && result.length > 0) return result;
+
+    return false;
+  }
   /*****************************************************************************************/
   /*****************************************************************************************/
