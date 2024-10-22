@@ -1,5 +1,5 @@
 module.exports = {
     User: require('../models/user.model'),
-    Courses : require('../models/courses.model'),
-    Admin: require('../models/admin.model'),
+    Courses : require('../models/courses.model')
+    
 }

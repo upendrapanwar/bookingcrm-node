@@ -36,7 +36,7 @@ module.exports = {
    * @returns Object|null
    */
 async function authenticate({ email, password }) {
-    const admin = await Admin.findOne({ email });
+    const admin = await User.findOne({ email });
     console.log('admin----',admin)
 
     if (admin && bcrypt.compareSync(password, admin.password)) {
