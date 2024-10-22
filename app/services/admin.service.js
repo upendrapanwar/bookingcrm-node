@@ -18,8 +18,6 @@ const msg = require("../helpers/messages.json");
 const {
     User,
     Courses,
-    Admin,
-
 } = require("../helpers/db");
 
 module.exports = {
