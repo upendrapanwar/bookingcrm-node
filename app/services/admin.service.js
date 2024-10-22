@@ -18,19 +18,60 @@ const msg = require("../helpers/messages.json");
 const {
     User,
     Courses,
+    Admin,
 
 } = require("../helpers/db");
 
 module.exports = {
     addCourse,
     getCourse,
+    authenticate,
 };
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+   * Manages admin login operations
+   *
+   * @param {email,passwrd}
+   *
+   * @returns Object|null
+   */
+async function authenticate({ email, password }) {
+    const admin = await Admin.findOne({ email });
+    console.log('admin----',admin)
+
+    if (admin && bcrypt.compareSync(password, admin.password)) {
+        const {
+            password,
+            reset_password,
+            __v,
+            createdAt,
+            updatedAt,
+            social_accounts,
+            ...userWithoutHash
+        } = admin.toObject();
+        const token = jwt.sign({ id: admin.id }, config.secret, {
+            expiresIn: "2h",
+        });
+        var expTime = new Date();
+        expTime.setHours(expTime.getHours() + 2); //2 hours token expiration time
+        //expTime.setMinutes(expTime.getMinutes() + 2);
+        expTime = expTime.getTime();
+
+        return {
+            ...userWithoutHash,
+            token,
+            expTime,
+        };
+    }
+}
 
 /*****************************************************************************************/
 /*****************************************************************************************/
 
 async function addCourse(param) {
-   // console.log('param---', param)
+    // console.log('param---', param)
     try {
         const course = new Courses({
             course_title: param.course_title,
