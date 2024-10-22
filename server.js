@@ -81,9 +81,13 @@ app.use(
 //   //log.Info(`Server Running at ${PORT} on ${process.env.NODE_ENV}...`)
 // });
 
-const httpServer = app.listen(PORT, () => {
-    console.log("HTTP Server running on port " + PORT);
+//const httpServer = app.listen(PORT, () => {
+//    console.log("HTTP Server running on port " + PORT);
     //log.Info(`Server Running at ${PORT} on ${process.env.NODE_ENV}...`)
+//  });
+
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}.`);
   });
 
 
