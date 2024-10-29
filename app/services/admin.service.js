@@ -18,12 +18,15 @@ const msg = require("../helpers/messages.json");
 const {
     User,
     Courses,
+    Categories,
 } = require("../helpers/db");
 
 module.exports = {
     addCourse,
     getCourse,
     authenticate,
+    addCategory,
+    getAllcategories,
 };
 
 /*****************************************************************************************/
@@ -37,7 +40,6 @@ module.exports = {
    */
 async function authenticate({ email, password }) {
     const admin = await User.findOne({ email });
-    console.log('admin----',admin)
 
     if (admin && bcrypt.compareSync(password, admin.password)) {
         const {
@@ -135,3 +137,49 @@ async function getAllUsers() {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function addCategory(param) {
+    try {
+        const existingCategory = await Categories.findOne({ category: param.name });
+        
+        if (existingCategory) {
+            return false;
+        }
+
+        const slug = slugify(param.name, { lower: true });
+
+        const category = new Categories({
+            category: param.name,
+            slug : slug,
+            description: param.description || '',
+            parent : param.sub_category || null,
+            isActive : true,
+        });
+        
+        const categorydata = await category.save();
+        if (categorydata) {
+            const categoriesInDescendingOrder = await Categories.find().select().sort({ createdAt: 'desc' });
+            return categoriesInDescendingOrder;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error adding category:', error);
+        throw new Error('Could not add category. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function getAllcategories(param) {
+    console.log('param---', param);
+    try {
+        const result = await Categories.find().select().sort({ createdAt: 'desc' });
+        if (result && result.length > 0){
+            return result;
+        } else{
+            return false;
+        }
+    } catch (error) {
+        console.error('Error fetching category:', error);
+        throw new Error('Could not fetch category. Please try again later.');
+    }
+}

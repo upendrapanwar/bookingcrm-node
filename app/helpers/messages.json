@@ -48,7 +48,14 @@
         "get_course": {
             "success": "Courses get successfully.",
             "error": "Failed to get courses."
+        },
+        "add_category" : {
+             "success": "Category added successfully.",
+            "error": "Failed to add Category."
+        },
+        "get_categories": {
+            "success": "Categories get successfully.",
+            "error": "Failed to get categories."
         }
-
     }
 }

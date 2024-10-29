@@ -9,13 +9,12 @@ const schema = new Schema({
     password: { type: String, required: false, default: '' },
     phone: { type: String, required: false, default: '' },
     role: { type: String, required: false, default: 'student' },
-    address: {
-        street: String,
-        city: String,
-        state: String,
-        country: String,
-        zip: Number
-    },
+    address: { type: String, required: false, default: '' },
+    city: { type: String, required: false, default: '' },
+    state: { type: String, required: false, default: '' },
+    country: { type: String, required: false, default: '' },
+    zip: { type: String, required: false, default: '' },
+    
     profile_image_url: { type: String, required: false, default: null },
     original_profile_image_url: { type: String, required: false, default: null },
     isActive: { type: Boolean, required: false, default: true },
