@@ -32,12 +32,11 @@
         },
         "profile": {
             "update_success": "Profile updated successfully."
-        }, 
+        },
         "forgot_password": {
             "success": "Data retrieved successfully.",
             "error": "Data not found."
         }
-
     },
 
     "admin": {
@@ -48,6 +47,14 @@
         "get_course": {
             "success": "Courses get successfully.",
             "error": "Failed to get courses."
+        },
+        "update_course": {
+            "success": "Course updated successfully.",
+            "error": "Failed to update course."
+        },
+        "delete_course": {
+            "success": "Courses deleted successfully.",
+            "error": "Failed to delete courses."
         }
 
     }

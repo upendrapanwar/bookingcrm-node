@@ -9,9 +9,9 @@ const msg = require('../helpers/messages.json');
 router.post('/signin',authenticate);
 router.post('/add_course', addCourse);
 router.get('/get_course', getCourse);
-
-
-
+router.get('/get_course_byId/:id', getCourseById);
+router.put('/update_course', updateCourse);
+router.put('/delete_course', deleteCourse);
 module.exports = router;
 
 
@@ -112,5 +112,105 @@ function getCourse(req, res, next) {
         );
 }
 
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Function to get Course byId
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function getCourseById(req, res, next) {
+    adminService
+        .getCourseById(req.params)
+        .then((course) =>
+            course
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.get_course.success,
+                    data: course,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.get_course.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Function to update Courses
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function updateCourse(req, res, next) {
+    adminService
+        .updateCourse(req.body)
+        .then((coursedata) =>
+            coursedata
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.update_course.success,
+                    data: coursedata,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.update_course.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Function to delete Course
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function deleteCourse(req, res, next) {
+    adminService
+        .deleteCourse(req.body)
+        .then((courses) =>
+            courses
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.delete_course.success,
+                    data: courses,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.delete_course.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
 /*****************************************************************************************/
 /*****************************************************************************************/
