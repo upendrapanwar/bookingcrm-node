@@ -27,6 +27,9 @@ module.exports = {
     authenticate,
     addCategory,
     getAllcategories,
+    getCourseById,
+    updateCourse,
+    deleteCourse,
 };
 
 /*****************************************************************************************/
@@ -183,3 +186,99 @@ async function getAllcategories(param) {
         throw new Error('Could not fetch category. Please try again later.');
     }
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get Course byId
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getCourseById(param) {
+    const result = await Courses.findById(param.id).select();
+
+    if (result) return result;
+
+    return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Manages update Course operations
+ *
+ * @param  {Object} param 
+ *
+ * @returns Object|null
+ */
+async function updateCourse(param) {
+    console.log('param---', param)
+    try {
+        const updatedCourse = await Courses.findOneAndUpdate(
+            { _id: param.id },
+            {
+                $set: {
+                    course_title: param.course_title,
+                    course_information: param.course_information,
+                    category: param.category,
+                    regular_price: param.regular_price,
+                    sale_price: param.sale_price,
+                    vat: param.vat,
+                    availability: param.availability,
+                    course_time: param.course_time,
+                    course_image: param.course_image,
+                    course_format: param.course_format,
+                    enrollment_capacity: param.enrollment_capacity,
+                    additional_information: param.additional_information,
+                    updatedBy:param.updated_By,
+                },
+            },
+            { new: true }
+        );
+
+        if (updatedCourse) {
+            return updatedCourse;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating course:', error);
+        throw new Error('Could not update course. Please try again later.');
+    }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Manages delete Course operations
+ *
+ * @param  {Object} param 
+ *
+ * @returns Object|null
+ */
+async function deleteCourse(param) {
+    console.log('param---', param)
+    try {
+        //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
+        const deletedCourse = await Courses.findOneAndUpdate(
+            { _id: param.id },
+            {
+                $set: {
+                    isActive:false,
+                },
+            },
+            { new: true }
+        );
+        if (deletedCourse) {
+            return deletedCourse;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        throw new Error('Could not delete course. Please try again later.');
+    }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/

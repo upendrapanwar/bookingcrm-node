@@ -9,16 +9,19 @@ const courseSchema = new Schema({
     regular_price: { type: Number, required: true },
     sale_price: { type: Number, required: false },
     vat: { type: Number, required: false, default: 0 },
-    availability: { type: String, required: true, default: 0 },
+    // availability: { type: String, required: true, default: 0 },
+    start_date: { type: String, required: true },
+    end_date: { type: String, required: true },
     course_time :{type: String, required: true, default: ""},
     course_image: { type: String, required: false, default: "" },
-    instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false },
+    image_id:{ type: String, required: false, default: "" },
+    instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     course_format: { type: String, required: true, default: 'Online' },
     enrollment_capacity: { type: Number, required: true, default: 0},
     isActive: { type: Boolean, default: true },
     training: {type: String, required: false, default: ""},
     additional_information : {type: String, required: false, default: ''},
-
+    updatedBy : {type: String, required: false, default: ''},
 }, {
     timestamps: true
 });
