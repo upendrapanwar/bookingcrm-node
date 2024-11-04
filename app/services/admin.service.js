@@ -12,6 +12,8 @@ const jwt = require("jsonwebtoken");
 // const fs = require("fs");
 // const path = require("path");
 const bcrypt = require("bcryptjs");
+const slugify = require('slugify');
+
 
 const msg = require("../helpers/messages.json");
 
