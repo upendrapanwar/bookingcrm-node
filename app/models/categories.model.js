@@ -6,6 +6,7 @@ const categoriesSchema = new Schema({
     category: { type: String, required: false, default: '' },
     slug: { type: String, unique: true, required: true },
     parent: { type: Schema.Types.ObjectId, ref: 'Categories', required: false, default: null },
+    parentCategory : {type: String, required: false, default: '' },
     description : {type: String, required: false, default: ''},
     isActive: { type: Boolean, required: false, default: true },
 }, {

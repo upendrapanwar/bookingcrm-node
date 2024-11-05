@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 // const fs = require("fs");
 // const path = require("path");
 const bcrypt = require("bcryptjs");
+const slugify = require('slugify');
 
 const msg = require("../helpers/messages.json");
 
@@ -30,6 +31,7 @@ module.exports = {
     getCourseById,
     updateCourse,
     deleteCourse,
+    getcategoryById,
 };
 
 /*****************************************************************************************/
@@ -74,7 +76,6 @@ async function authenticate({ email, password }) {
 /*****************************************************************************************/
 
 async function addCourse(param) {
-    // console.log('param---', param)
     try {
         const course = new Courses({
             course_title: param.course_title,
@@ -155,9 +156,10 @@ async function addCategory(param) {
             slug : slug,
             description: param.description || '',
             parent : param.sub_category || null,
+            parentCategory : param.sub_category_name,
             isActive : true,
         });
-        
+       
         const categorydata = await category.save();
         if (categorydata) {
             const categoriesInDescendingOrder = await Categories.find().select().sort({ createdAt: 'desc' });
@@ -212,7 +214,6 @@ async function getCourseById(param) {
  * @returns Object|null
  */
 async function updateCourse(param) {
-    console.log('param---', param)
     try {
         const updatedCourse = await Courses.findOneAndUpdate(
             { _id: param.id },
@@ -257,7 +258,6 @@ async function updateCourse(param) {
  * @returns Object|null
  */
 async function deleteCourse(param) {
-    console.log('param---', param)
     try {
         //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
         const deletedCourse = await Courses.findOneAndUpdate(
@@ -282,3 +282,20 @@ async function deleteCourse(param) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function getcategoryById(param) {
+    try {
+        const _id = param.id;
+        const result = await Categories.findById({_id}).select();
+        if (result && result.length > 0){
+            console.log("result",result);
+
+            return result;
+        } else{
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('Error fetching category:', error);
+        throw new Error('Could not fetched category. Please try again later.');
+    }
+}
