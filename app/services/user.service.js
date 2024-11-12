@@ -154,7 +154,9 @@ async function getAllUsers() {
 * @returns Object|null
 */
 async function getAllCourses(param) {
-  const result = await Courses.find().select().sort({ createdAt: 'desc' });
+  const result = await Courses.find({ isActive: true })
+  .select()
+  .sort({ createdAt: 'desc' });
 
   if (result && result.length > 0) return result;
 
