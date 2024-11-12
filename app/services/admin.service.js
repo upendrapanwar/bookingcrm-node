@@ -80,6 +80,7 @@ async function addCourse(param) {
             course_title: param.course_title,
             course_information: param.course_information,
             category: param.category,
+            course_type: param.course_type,
             regular_price: param.regular_price,
             sale_price: param.sale_price,
             vat: param.vat,
@@ -87,11 +88,13 @@ async function addCourse(param) {
             course_time: param.course_time,
             start_date: param.start_date,
             end_date: param.end_date,
+            course_schedule_dates: param.courseScheduleDates,
             course_image: param.course_image,
             instructor:param.instructorId,
             course_format: param.course_format,
             enrollment_capacity: param.enrollment_capacity,
             additional_information: param.additional_information,
+            completing_the_course: param.completing_the_course
         })
 
     const coursedata = await course.save();
@@ -117,7 +120,10 @@ async function addCourse(param) {
  * @returns Object|null
  */
 async function getCourse(param) {
-    const result = await Courses.find().select().sort({ createdAt: 'desc' });
+    const result = await Courses.find()
+        .populate('instructor')
+        .select()
+        .sort({ createdAt: 'desc' });
 
     if (result && result.length > 0) return result;
 
@@ -214,6 +220,7 @@ async function getCourseById(param) {
  * @returns Object|null
  */
 async function updateCourse(param) {
+    console.log('param--',param)
     try {
         const updatedCourse = await Courses.findOneAndUpdate(
             { _id: param.id },
@@ -222,15 +229,21 @@ async function updateCourse(param) {
                     course_title: param.course_title,
                     course_information: param.course_information,
                     category: param.category,
+                    course_type: param.course_type,
                     regular_price: param.regular_price,
                     sale_price: param.sale_price,
                     vat: param.vat,
-                    availability: param.availability,
+                    // availability: param.availability,
+                    course_schedule_dates: param.course_schedule_dates,
+                    // start_date: param.start_date,
+                
+                    // end_date: param.end_date,
                     course_time: param.course_time,
                     course_image: param.course_image,
                     course_format: param.course_format,
                     enrollment_capacity: param.enrollment_capacity,
                     additional_information: param.additional_information,
+                    completing_the_course: param.completing_the_course,
                     updatedBy:param.updated_By,
                 },
             },
