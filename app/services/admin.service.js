@@ -31,6 +31,7 @@ module.exports = {
     updateCourse,
     deleteCourse,
     getcategoryById,
+    editCategory,
 };
 
 /*****************************************************************************************/
@@ -294,6 +295,40 @@ async function getcategoryById(param) {
     } catch (error) {
         console.error('Error fetching category:', error);
         throw new Error('Could not fetched category. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function editCategory(req) {
+    const _id = req.params.id;
+    const data = req.body;
+    const slug = slugify(data.name, { lower: true });
+
+    try {
+        const findData = await Categories.findById(_id).select();
+        if(!findData){
+            return false;
+        }
+
+        const newData = {
+            category : data.name,
+            slug :slug,
+            parent : data.sub_category_id,
+            parentCategory : data.sub_category_name,
+            description : data.description,
+            isActive : findData.isActive,
+        } 
+
+        const result = await Categories.findByIdAndUpdate(_id, newData, { new: true });
+        if(result){
+            return result;
+        }else{
+            return false;
+        }
+       
+    } catch (error) {
+        console.error('Error editing category:', error);
+        throw new Error('Could not edited category. Please try again later.');
     }
 }
 /*****************************************************************************************/

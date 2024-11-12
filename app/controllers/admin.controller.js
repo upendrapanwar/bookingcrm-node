@@ -15,7 +15,7 @@ router.get('/get_course_byId/:id', getCourseById);
 router.put('/update_course', updateCourse);
 router.put('/delete_course', deleteCourse);
 router.get('/getcategory/:id', getcategoryById);
-
+router.put('/edit_category/:id', editCategory);
 
 
 module.exports = router;
@@ -288,7 +288,7 @@ function getAllcategories(req, res, next) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 /**
- * Function to get Courses
+ * Function to get category By Id
  * 
  * @param {*} req 
  * @param {*} res 
@@ -299,6 +299,38 @@ function getAllcategories(req, res, next) {
 function getcategoryById(req, res, next) {
     adminService
         .getcategoryById(req.params)
+        .then((result) =>
+            result
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.get_categories.success,
+                    data: result,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.get_categories.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to get Courses
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function editCategory(req, res, next) {
+    adminService
+        .editCategory(req)
         .then((result) =>
             result
                 ? res.status(201).json({

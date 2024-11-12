@@ -55,6 +55,7 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   next();
 });
+
 // Require routes
 // app.use("/front", require("./app/controllers/front.controller"));
 // app.use("/community", require("./app/controllers/community.controller"));
