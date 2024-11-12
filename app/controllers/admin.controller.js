@@ -300,12 +300,12 @@ function getAllcategories(req, res, next) {
 function getcategoryById(req, res, next) {
     adminService
         .getcategoryById(req.params)
-        .then((category) =>
-            category
+        .then((result) =>
+            result
                 ? res.status(201).json({
                     status: true,
                     message: msg.admin.get_categories.success,
-                    data: category,
+                    data: result,
                 })
                 : res
                     .status(400)

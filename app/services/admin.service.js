@@ -74,7 +74,6 @@ async function authenticate({ email, password }) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function addCourse(param) {
-    console.log('param---', param)
     try {
         const course = new Courses({
             course_title: param.course_title,
@@ -182,7 +181,6 @@ async function addCategory(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function getAllcategories(param) {
-    console.log('param---', param);
     try {
         const result = await Categories.find().select().sort({ createdAt: 'desc' });
         if (result && result.length > 0){
@@ -300,9 +298,7 @@ async function getcategoryById(param) {
     try {
         const _id = param.id;
         const result = await Categories.findById({_id}).select();
-        if (result && result.length > 0){
-            console.log("result",result);
-
+        if (result){
             return result;
         } else{
             return false;
