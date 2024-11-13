@@ -16,7 +16,9 @@ const config = require('../config/index');
 // });
 
 //mongoose.Promise = global.Promise;
-
+const stripe = require("stripe")(
+  "sk_test_51QKGTWCHTdQvfuyCQYX22vWRSy5ht2zTWoAIBUMB5RHA6aTZnA22eIKhBg6OWSZUMuYZHiVAfY5rl2qGR5DdsMKT00qrEH8RDe"
+);
 const jwt = require("jsonwebtoken");
 // const fs = require("fs");
 // const path = require("path");
@@ -33,14 +35,15 @@ module.exports = {
   create,
   authenticate,
   getAllUsers,
-  getAllCourses
+  getAllCourses,
+  checkoutSession,
+  placedOrder,
 };
 
 /*****************************************************************************************/
 /*****************************************************************************************/
 
 async function create(param) {
-  // console.log('param--',param)
   try {
     if (await User.findOne({ email: param.email })) {
       throw 'email "' + param.email + '" is already taken';
@@ -155,10 +158,71 @@ async function getAllUsers() {
 */
 async function getAllCourses(param) {
   const result = await Courses.find({ isActive: true })
-  .select()
-  .sort({ createdAt: 'desc' });
+    .select()
+    .sort({ createdAt: 'desc' });
 
   if (result && result.length > 0) return result;
 
   return false;
+}
+
+
+//********************************************************* */
+// **********************************************************
+// Stripe
+
+async function checkoutSession(req) {
+  try {
+    const { amount } = req.body;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: 'EUR',
+            product_data: {
+              name: "Product_Name"
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `http://localhost:3000/checkout`, // Corrected typo in `success_url`
+      // success_url: `https://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}`, // Corrected typo in `success_url`
+      cancel_url: `http://localhost:3000/cancel`,
+    });
+    return session;
+
+  } catch (err) {
+    console.error("error", error);
+    return false;
+  }
+}
+
+//********************************************************* */
+// **********************************************************
+
+async function placedOrder(param) {
+  console.log("param",param);
+  // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
+  //   email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv } = req.body;
+  // try {
+  //   const result = new Payment({userId,
+  //     firstName, lastName, companyName, country, streetAddress,
+  //     flat, city, county, postcode, email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv
+  //   });
+  //   console.log("result", result);
+
+  //   if (result) {
+  //     await result.save();
+  //     return result;
+  //   } else {
+  //     return false;
+  //   }
+  // } catch (error) {
+  //   console.error('Error placed Order:', error);
+  //   throw new Error('Could not placed order. Please try again later.');
+  // }
 }
