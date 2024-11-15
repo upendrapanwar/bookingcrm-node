@@ -13,6 +13,11 @@ router.post('/signup', register);   //registerValidation,
 router.get('/get-all-users', getAllUsers);   //registerValidation,
 router.get('/get-all-courses', getAllCourses);
 
+//***************email functionality */
+router.post("/user-support-email", userSupportEmail); 
+router.post("/user-contact-us", userContactUs);
+router.post("/support/request-call", supportReqCall);
+
 module.exports = router;
 
 /**
@@ -109,5 +114,61 @@ function getAllCourses(req, res, next) {
     .then(allCourses => allCourses ? res.status(200).json({ status: true, data: allCourses }) : res.status(400).json({ status: false, message: msg.admin.add_course, data: [] }))
     .catch(err => next(res.json({ status: false, message: err })));
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to email support
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function userSupportEmail(req, res, next) {
+  userService
+    .userSupportEmail(req.body)
+    .then((user) =>
+      user
+        ? res
+          .status(200)
+          .json({ status: true, message: "Email sent successfully." })
+        : res
+          .status(400)
+          .json({ status: false, message: "Email has not sent. Please, try again." })
+    )
+    .catch((err) => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+//User Contact-Us
+
+function userContactUs(req, res, next) {
+  userService
+    .userContactUs(req.body)
+    .then((user) =>
+      user
+        ? res
+          .status(200)
+          .json({ status: true, message: "Email sent successfully." })
+        : res
+          .status(400)
+          .json({ status: false, message: "Email has not sent. Please, try again." })
+    )
+    .catch((err) => next(res.json({ status: false, message: err })));
+}
+
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function supportReqCall(req, res, next) {
+  userService.supportReqCall(req)
+    .then((result) => result ? res.json({ status: true, message: "Support request created successfully." }) : res.json({ status: false, message: "Error creating support request." }))
+    .catch((err) => next(res.json({ status: false, message: err.message })));
+}
+
+
 /*****************************************************************************************/
 /*****************************************************************************************/
