@@ -44,31 +44,40 @@ module.exports = {
    * @returns Object|null
    */
 async function authenticate({ email, password }) {
-    const admin = await User.findOne({ email });
+    try {
+        const admin = await User.findOne({email:email, role:'admin'});
 
-    if (admin && bcrypt.compareSync(password, admin.password)) {
-        const {
-            password,
-            reset_password,
-            __v,
-            createdAt,
-            updatedAt,
-            social_accounts,
-            ...userWithoutHash
-        } = admin.toObject();
-        const token = jwt.sign({ id: admin.id }, config.secret, {
-            expiresIn: "2h",
-        });
-        var expTime = new Date();
-        expTime.setHours(expTime.getHours() + 2); //2 hours token expiration time
-        //expTime.setMinutes(expTime.getMinutes() + 2);
-        expTime = expTime.getTime();
+        if (admin && bcrypt.compareSync(password, admin.password)) {
+            if (admin.role !== "admin") {
+                throw Error("Unauthorized: You must be an admin to log in.");
+            }
+            const {
+                password,
+                reset_password,
+                __v,
+                createdAt,
+                updatedAt,
+                social_accounts,
+                ...userWithoutHash
+            } = admin.toObject();
+            const token = jwt.sign({ id: admin.id }, config.secret, {
+                expiresIn: "2h",
+            });
+            var expTime = new Date();
+            expTime.setHours(expTime.getHours() + 2); //2 hours token expiration time
+            //expTime.setMinutes(expTime.getMinutes() + 2);
+            expTime = expTime.getTime();
 
-        return {
-            ...userWithoutHash,
-            token,
-            expTime,
-        };
+            return {
+                ...userWithoutHash,
+                token,
+                expTime,
+            };
+
+        }
+    } catch (error) {
+        console.error("Authentication error:", error.message);
+        throw error;
     }
 }
 
@@ -90,23 +99,23 @@ async function addCourse(param) {
             end_date: param.end_date,
             course_schedule_dates: param.courseScheduleDates,
             course_image: param.course_image,
-            instructor:param.instructorId,
+            instructor: param.instructorId,
             course_format: param.course_format,
             enrollment_capacity: param.enrollment_capacity,
             additional_information: param.additional_information,
             completing_the_course: param.completing_the_course
         })
 
-    const coursedata = await course.save();
-    if (coursedata) {
-        return coursedata;
-    } else {
-        return false;
+        const coursedata = await course.save();
+        if (coursedata) {
+            return coursedata;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error adding course:', error);
+        throw new Error('Could not add course. Please try again later.');
     }
-} catch (error) {
-    console.error('Error adding course:', error);
-    throw new Error('Could not add course. Please try again later.');
-}
 }
 
 /*****************************************************************************************/
@@ -151,7 +160,7 @@ async function getAllUsers() {
 async function addCategory(param) {
     try {
         const existingCategory = await Categories.findOne({ category: param.name });
-        
+
         if (existingCategory) {
             return false;
         }
@@ -160,13 +169,13 @@ async function addCategory(param) {
 
         const category = new Categories({
             category: param.name,
-            slug : slug,
+            slug: slug,
             description: param.description || '',
-            parent : param.sub_category || null,
-            parentCategory : param.sub_category_name,
-            isActive : true,
+            parent: param.sub_category || null,
+            parentCategory: param.sub_category_name,
+            isActive: true,
         });
-       
+
         const categorydata = await category.save();
         if (categorydata) {
             const categoriesInDescendingOrder = await Categories.find().select().sort({ createdAt: 'desc' });
@@ -184,9 +193,9 @@ async function addCategory(param) {
 async function getAllcategories(param) {
     try {
         const result = await Categories.find().select().sort({ createdAt: 'desc' });
-        if (result && result.length > 0){
+        if (result && result.length > 0) {
             return result;
-        } else{
+        } else {
             return false;
         }
     } catch (error) {
@@ -220,7 +229,7 @@ async function getCourseById(param) {
  * @returns Object|null
  */
 async function updateCourse(param) {
-    console.log('param--',param)
+    console.log('param--', param)
     try {
         const updatedCourse = await Courses.findOneAndUpdate(
             { _id: param.id },
@@ -236,7 +245,7 @@ async function updateCourse(param) {
                     // availability: param.availability,
                     course_schedule_dates: param.course_schedule_dates,
                     // start_date: param.start_date,
-                
+
                     // end_date: param.end_date,
                     course_time: param.course_time,
                     course_image: param.course_image,
@@ -244,7 +253,7 @@ async function updateCourse(param) {
                     enrollment_capacity: param.enrollment_capacity,
                     additional_information: param.additional_information,
                     completing_the_course: param.completing_the_course,
-                    updatedBy:param.updated_By,
+                    updatedBy: param.updated_By,
                 },
             },
             { new: true }
@@ -277,7 +286,7 @@ async function deleteCourse(param) {
             { _id: param.id },
             {
                 $set: {
-                    isActive:false,
+                    isActive: false,
                 },
             },
             { new: true }
@@ -298,13 +307,13 @@ async function deleteCourse(param) {
 async function getcategoryById(param) {
     try {
         const _id = param.id;
-        const result = await Categories.findById({_id}).select();
-        if (result){
+        const result = await Categories.findById({ _id }).select();
+        if (result) {
             return result;
-        } else{
+        } else {
             return false;
         }
-        
+
     } catch (error) {
         console.error('Error fetching category:', error);
         throw new Error('Could not fetched category. Please try again later.');
@@ -319,26 +328,26 @@ async function editCategory(req) {
 
     try {
         const findData = await Categories.findById(_id).select();
-        if(!findData){
+        if (!findData) {
             return false;
         }
 
         const newData = {
-            category : data.name,
-            slug :slug,
-            parent : data.sub_category_id,
-            parentCategory : data.sub_category_name,
-            description : data.description,
-            isActive : findData.isActive,
-        } 
+            category: data.name,
+            slug: slug,
+            parent: data.sub_category_id,
+            parentCategory: data.sub_category_name,
+            description: data.description,
+            isActive: findData.isActive,
+        }
 
         const result = await Categories.findByIdAndUpdate(_id, newData, { new: true });
-        if(result){
+        if (result) {
             return result;
-        }else{
+        } else {
             return false;
         }
-       
+
     } catch (error) {
         console.error('Error editing category:', error);
         throw new Error('Could not edited category. Please try again later.');

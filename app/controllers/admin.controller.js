@@ -165,7 +165,7 @@ function getCourseById(req, res, next) {
  * @return JSON|null
  */
 function updateCourse(req, res, next) {
-    //console.log('req.body--',req.body)
+    console.log('req.body--',req.body)
     adminService
         .updateCourse(req.body)
         .then((coursedata) =>
