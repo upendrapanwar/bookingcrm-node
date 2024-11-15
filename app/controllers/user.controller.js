@@ -9,9 +9,18 @@ const msg = require('../helpers/messages.json');
 //const multer = require('multer');
 
 router.post('/signin', authenticate);
-router.post('/signup', register);   //registerValidation,
-router.get('/get-all-users', getAllUsers);   //registerValidation,
+router.post('/signup', register);   
+router.get('/get-all-users', getAllUsers);  
 router.get('/get-all-courses', getAllCourses);
+router.post("/checkoutSession", checkoutSession);
+router.post("/placedOrder", placedOrder);
+
+//stripe
+// router.post("/create-payment-intent", createPaymentIntent);
+
+
+ 
+
 
 //***************email functionality */
 router.post("/user-support-email", userSupportEmail); 
@@ -116,6 +125,54 @@ function getAllCourses(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+/**
+* Function to strip payment
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function checkoutSession(req, res, next) {
+  userService.checkoutSession(req)
+    .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+    .catch((err) => next(res.status(400).json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+// placedOrder
+function placedOrder(req, res, next) {
+  console.log("req",req);
+  userService
+      .placedOrder(req.body)
+      .then((result) =>
+        result
+              ? res.status(201).json({
+                  status: true,
+                  message: msg.user.add_category.success,
+                  data: result,
+              })
+              : res
+                  .status(400)
+                  .json({
+                      status: false,
+                      message: msg.user.add_category.error
+                  })
+      )
+      .catch((err) =>
+          next(res.status(400).json({ status: false, message: err }))
+      );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+// 
+// function createPaymentIntent(req, res, next) {
+//   userService.createPaymentIntent(req.body)
+//     .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+//     .catch((err) => next(res.status(400).json({ status: false, message: err })));
+// }
+
 /**
 * Function to email support
 * 

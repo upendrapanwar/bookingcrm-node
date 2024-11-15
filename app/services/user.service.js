@@ -17,7 +17,9 @@ const SendEmail = require("../helpers/email");
 // });
 
 //mongoose.Promise = global.Promise;
-
+const stripe = require("stripe")(
+  "sk_test_51QKGTWCHTdQvfuyCQYX22vWRSy5ht2zTWoAIBUMB5RHA6aTZnA22eIKhBg6OWSZUMuYZHiVAfY5rl2qGR5DdsMKT00qrEH8RDe"
+);
 const jwt = require("jsonwebtoken");
 // const fs = require("fs");
 // const path = require("path");
@@ -35,6 +37,9 @@ module.exports = {
   authenticate,
   getAllUsers,
   getAllCourses,
+  checkoutSession,
+  placedOrder,
+  // createPaymentIntent,,
 
 //*********************email functionality */
   userSupportEmail, 
@@ -46,7 +51,6 @@ module.exports = {
 /*****************************************************************************************/
 
 async function create(param) {
-  // console.log('param--',param)
   try {
     if (await User.findOne({ email: param.email })) {
       throw 'email "' + param.email + '" is already taken';
@@ -151,7 +155,6 @@ async function getAllUsers() {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-
 /**
 * Manages get All Course operations
 *
@@ -161,13 +164,67 @@ async function getAllUsers() {
 */
 async function getAllCourses(param) {
   const result = await Courses.find({ isActive: true })
-  .select()
-  .sort({ createdAt: 'desc' });
+    .select()
+    .sort({ createdAt: 'desc' });
 
   if (result && result.length > 0) return result;
 
   return false;
 }
+
+
+//********************************************************* */
+// **********************************************************
+// Stripe
+async function checkoutSession(req) {
+  console.log("req",req);
+
+  try {
+    const { amount } = req.body;
+    console.log("amount",amount);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: "eur",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    return paymentIntent;
+
+  } catch (err) {
+    console.error("error", err);
+    return false;
+  }
+}
+//********************************************************* */
+// **********************************************************
+async function placedOrder(param) {
+  console.log("param",param);
+  // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
+  //   email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv } = req.body;
+  // try {
+  //   const result = new Payment({userId,
+  //     firstName, lastName, companyName, country, streetAddress,
+  //     flat, city, county, postcode, email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv
+  //   });
+  //   console.log("result", result);
+
+  //   if (result) {
+  //     await result.save();
+  //     return result;
+  //   } else {
+  //     return false;
+  //   }
+  // } catch (error) {
+  //   console.error('Error placed Order:', error);
+  //   throw new Error('Could not placed order. Please try again later.');
+  // }
+}
+
+
+
+
 /*****************************************************************************************/
 /*****************************************************************************************/
 
