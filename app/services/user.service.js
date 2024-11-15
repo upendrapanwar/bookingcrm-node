@@ -38,6 +38,7 @@ module.exports = {
   getAllCourses,
   checkoutSession,
   placedOrder,
+  // createPaymentIntent,
 };
 
 /*****************************************************************************************/
@@ -148,7 +149,6 @@ async function getAllUsers() {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-
 /**
 * Manages get All Course operations
 *
@@ -170,40 +170,29 @@ async function getAllCourses(param) {
 //********************************************************* */
 // **********************************************************
 // Stripe
-
 async function checkoutSession(req) {
+  console.log("req",req);
+
   try {
     const { amount } = req.body;
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: 'EUR',
-            product_data: {
-              name: "Product_Name"
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `http://localhost:3000/checkout`, // Corrected typo in `success_url`
-      // success_url: `https://localhost:3000/success?session_id={CHECKOUT_SESSION_ID}`, // Corrected typo in `success_url`
-      cancel_url: `http://localhost:3000/cancel`,
+    console.log("amount",amount);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: "eur",
+      automatic_payment_methods: {
+        enabled: true,
+      },
     });
-    return session;
+
+    return paymentIntent;
 
   } catch (err) {
-    console.error("error", error);
+    console.error("error", err);
     return false;
   }
 }
-
 //********************************************************* */
 // **********************************************************
-
 async function placedOrder(param) {
   console.log("param",param);
   // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
@@ -226,3 +215,6 @@ async function placedOrder(param) {
   //   throw new Error('Could not placed order. Please try again later.');
   // }
 }
+
+
+

@@ -15,6 +15,10 @@ router.get('/get-all-courses', getAllCourses);
 router.post("/checkoutSession", checkoutSession);
 router.post("/placedOrder", placedOrder);
 
+//stripe
+// router.post("/create-payment-intent", createPaymentIntent);
+
+
  
 
 
@@ -132,8 +136,6 @@ function checkoutSession(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-
-
 // placedOrder
 function placedOrder(req, res, next) {
   console.log("req",req);
@@ -157,3 +159,11 @@ function placedOrder(req, res, next) {
           next(res.status(400).json({ status: false, message: err }))
       );
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+// 
+// function createPaymentIntent(req, res, next) {
+//   userService.createPaymentIntent(req.body)
+//     .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+//     .catch((err) => next(res.status(400).json({ status: false, message: err })));
+// }
