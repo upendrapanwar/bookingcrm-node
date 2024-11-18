@@ -169,6 +169,7 @@ async function getAllCourses(param) {
 
   if (result && result.length > 0) return result;
 
+  
   return false;
 }
 
