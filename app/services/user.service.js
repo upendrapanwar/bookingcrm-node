@@ -44,7 +44,8 @@ module.exports = {
 //*********************email functionality */
   userSupportEmail, 
   userContactUs,
-  supportReqCall
+  supportReqCall,
+  sendPaymentEmail,
 };
 
 /*****************************************************************************************/
@@ -443,6 +444,66 @@ async function supportReqCall(req) {
   } catch (error) {
     console.error("Error:", error);
     return false;
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function sendPaymentEmail(param) {
+  const { paymentIntent, amount, email, name } = param;
+  
+  const formattedAmount = (amount / 100).toFixed(2); // Convert cents to dollars/euros
+  
+  const mailOptions = {
+    from: `"Booking App Live" <${config.mail_from_email}>`,
+    to: email,
+    subject: "Payment Confirmation - Booking App Live",
+    html: `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+      <!-- Header -->
+      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Payment Confirmation</h1>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; background-color: #f9f9f9;">
+        <h2 style="color: #333;">Thank you for your payment!</h2>
+        
+        <p>Dear ${name},</p>
+        
+        <p>We're writing to confirm that your payment has been successfully processed.</p>
+
+        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
+          <p><strong>Amount Paid:</strong> €${formattedAmount}</p>
+          <p><strong>Transaction ID:</strong> ${paymentIntent}</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
+
+        <p style="font-style: italic;">Thank you for choosing our service!</p>
+        
+        <p>Best regards,<br>The Booking App Live Team</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+        <p style="color: white; margin: 0; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+        </p>
+      </div>
+    </div>
+    `
+  };
+
+  try {
+    await SendEmail(mailOptions);
+    return { success: true, message: "Payment confirmation email sent successfully" };
+  } catch (error) {
+    console.error("Error sending payment confirmation email:", error);
+    return { success: false, message: "Failed to send payment confirmation email" };
   }
 }
 

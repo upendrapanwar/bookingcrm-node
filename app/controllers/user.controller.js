@@ -26,6 +26,7 @@ router.post("/placedOrder", placedOrder);
 router.post("/user-support-email", userSupportEmail); 
 router.post("/user-contact-us", userContactUs);
 router.post("/support/request-call", supportReqCall);
+router.post("/send-payment-email", sendPaymentEmail);
 
 module.exports = router;
 
@@ -223,6 +224,16 @@ function userContactUs(req, res, next) {
 function supportReqCall(req, res, next) {
   userService.supportReqCall(req)
     .then((result) => result ? res.json({ status: true, message: "Support request created successfully." }) : res.json({ status: false, message: "Error creating support request." }))
+    .catch((err) => next(res.json({ status: false, message: err.message })));
+}
+
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function sendPaymentEmail(req, res, next) {
+  userService.sendPaymentEmail(req)
+    .then((result) => result ? res.json({ status: true, message: "Payment email send successfully." }) : res.json({ status: false, message: "Error in sending payment email." }))
     .catch((err) => next(res.json({ status: false, message: err.message })));
 }
 
