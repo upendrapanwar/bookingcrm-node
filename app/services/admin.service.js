@@ -95,15 +95,14 @@ async function addCourse(param) {
             vat: param.vat,
             //availability: param.availability,
             course_time: param.course_time,
-            start_date: param.start_date,
-            end_date: param.end_date,
             course_schedule_dates: param.courseScheduleDates,
             course_image: param.course_image,
             instructor: param.instructorId,
             course_format: param.course_format,
             enrollment_capacity: param.enrollment_capacity,
             additional_information: param.additional_information,
-            completing_the_course: param.completing_the_course
+            completing_the_course: param.completing_the_course,
+            why_use_our_training: param.why_use_our_training
         })
 
         const coursedata = await course.save();
@@ -242,17 +241,14 @@ async function updateCourse(param) {
                     regular_price: param.regular_price,
                     sale_price: param.sale_price,
                     vat: param.vat,
-                    // availability: param.availability,
                     course_schedule_dates: param.course_schedule_dates,
-                    // start_date: param.start_date,
-
-                    // end_date: param.end_date,
                     course_time: param.course_time,
                     course_image: param.course_image,
                     course_format: param.course_format,
                     enrollment_capacity: param.enrollment_capacity,
                     additional_information: param.additional_information,
                     completing_the_course: param.completing_the_course,
+                    why_use_our_training: param.why_use_our_training,
                     updatedBy: param.updated_By,
                 },
             },

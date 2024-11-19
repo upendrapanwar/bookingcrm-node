@@ -20,11 +20,11 @@ const courseSchema = new Schema({
     course_format: { type: String, required: true, default: 'Online' },
     enrollment_capacity: { type: Number, required: true, default: 0},
     isActive: { type: Boolean, default: true },
-    training: {type: String, required: false, default: ""},
     additional_information : {type: String, required: false, default: ''},
     updatedBy : {type: String, required: false, default: ''},
     course_information : {type: String, required: false, default: ''},
     completing_the_course: {type: String, required: false, default: ''},
+    why_use_our_training: {type: String, required: false, default: ''},
 }, {
     timestamps: true
 });
