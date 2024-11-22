@@ -5,6 +5,7 @@ const userService = require('../services/user.service');
 //const { array } = require('joi');
 //const { registerValidation } = require('../validations/user.validation');
 const msg = require('../helpers/messages.json');
+const stripe = require("stripe")(config.stripe_secret_key);
 
 //const multer = require('multer');
 
@@ -12,21 +13,21 @@ router.post('/signin', authenticate);
 router.post('/signup', register);   
 router.get('/get-all-users', getAllUsers);  
 router.get('/get-all-courses', getAllCourses);
-router.post("/checkoutSession", checkoutSession);
+
 router.post("/placedOrder", placedOrder);
 
 //stripe
-// router.post("/create-payment-intent", createPaymentIntent);
+router.post("/checkoutSession", checkoutSession);
 
 
- 
+//order
+router.post("/save-order-details", saveOrderDetails);
 
-
-//***************email functionality */
-router.post("/user-support-email", userSupportEmail); 
-router.post("/user-contact-us", userContactUs);
-router.post("/support/request-call", supportReqCall);
+//node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
+router.post("/send-wellcome-email", sendWellcomeEmail);
+router.post("/send-student-enrolled-email", sendEmailToAdmin);
+
 
 module.exports = router;
 
@@ -142,40 +143,17 @@ function checkoutSession(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-// placedOrder
-function placedOrder(req, res, next) {
-  console.log("req",req);
-  userService
-      .placedOrder(req.body)
-      .then((result) =>
-        result
-              ? res.status(201).json({
-                  status: true,
-                  message: msg.user.add_category.success,
-                  data: result,
-              })
-              : res
-                  .status(400)
-                  .json({
-                      status: false,
-                      message: msg.user.add_category.error
-                  })
-      )
-      .catch((err) =>
-          next(res.status(400).json({ status: false, message: err }))
-      );
-}
-/*****************************************************************************************/
-/*****************************************************************************************/
-// 
-// function createPaymentIntent(req, res, next) {
-//   userService.createPaymentIntent(req.body)
-//     .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
-//     .catch((err) => next(res.status(400).json({ status: false, message: err })));
+//
+// function createInvoice(req, res, next) {
+//   userService.createInvoice(req).then((result) =>result? res.status(201).json({status: true, message: msg.user.add_category.success,data: result,})
+//   : res.status(400).json({ status: false,message: msg.user.add_category.error}) )
+//   .catch((err) =>next(res.status(400).json({ status: false, message: err })));
 // }
 
+
+
 /**
-* Function to email support
+* Function to strip payment Verify
 * 
 * @param {*} req 
 * @param {*} res 
@@ -183,60 +161,70 @@ function placedOrder(req, res, next) {
 * 
 * @return JSON|null
 */
-function userSupportEmail(req, res, next) {
-  userService
-    .userSupportEmail(req.body)
-    .then((user) =>
-      user
-        ? res
-          .status(200)
-          .json({ status: true, message: "Email sent successfully." })
-        : res
-          .status(400)
-          .json({ status: false, message: "Email has not sent. Please, try again." })
-    )
-    .catch((err) => next(res.json({ status: false, message: err })));
+// function paymentVerify(req, res, next) {
+//   userService.paymentVerify(req).then((result) =>result? res.status(201).json({status: true, message: msg.user.add_category.success,data: result,})
+//   : res.status(400).json({ status: false,message: msg.user.add_category.error}) )
+//   .catch((err) =>next(res.status(400).json({ status: false, message: err })));
+// }
+/*****************************************************************************************/
+/*****************************************************************************************/
+// placedOrder
+function placedOrder(req, res, next) {
+  userService.placedOrder(req.body).then((result) =>result? res.status(201).json({status: true, message: msg.user.add_category.success,data: result,})
+  : res.status(400).json({ status: false,message: msg.user.add_category.error}) )
+  .catch((err) =>next(res.status(400).json({ status: false, message: err })));
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-
-//User Contact-Us
-
-function userContactUs(req, res, next) {
-  userService
-    .userContactUs(req.body)
-    .then((user) =>
-      user
-        ? res
-          .status(200)
-          .json({ status: true, message: "Email sent successfully." })
-        : res
-          .status(400)
-          .json({ status: false, message: "Email has not sent. Please, try again." })
-    )
-    .catch((err) => next(res.json({ status: false, message: err })));
-}
-
-
-/*****************************************************************************************/
-/*****************************************************************************************/
-
-function supportReqCall(req, res, next) {
-  userService.supportReqCall(req)
-    .then((result) => result ? res.json({ status: true, message: "Support request created successfully." }) : res.json({ status: false, message: "Error creating support request." }))
-    .catch((err) => next(res.json({ status: false, message: err.message })));
-}
-
-
-/*****************************************************************************************/
-/*****************************************************************************************/
-
 function sendPaymentEmail(req, res, next) {
+  console.log('email API call----');
   userService.sendPaymentEmail(req)
-    .then((result) => result ? res.json({ status: true, message: "Payment email send successfully." }) : res.json({ status: false, message: "Error in sending payment email." }))
-    .catch((err) => next(res.json({ status: false, message: err.message })));
+    .then((result) => {
+      console.log('Email service result:', result);
+      return result ? res.json({ status: true, message: "Payment email sent successfully." }) : res.json({ status: false, message: "Error in sending payment email." });
+    })
+    .catch((err) => {
+      console.error('Error in sendPaymentEmail controller:', err);
+      next(res.json({ status: false, message: err.message }));
+    });
 }
 
 
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function saveOrderDetails(req, res, next) {
+    userService.saveOrderDetails(req.body)
+      .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+      .catch((err) => next(res.status(400).json({ status: false, message: err })));
+  }
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function sendWellcomeEmail(req, res, next) {
+  userService.sendWellcomeEmail(req)
+    .then((result) => {
+      console.log('sendWellcomeEmail service result:', result);
+      return result ? res.json({ status: true, message: "WellcomeEmail sent successfully." }) : res.json({ status: false, message: "Error in sending WellcomeEmail email." });
+    })
+    .catch((err) => {
+      console.error('Error in sendWellcomeEmail controller:', err);
+      next(res.json({ status: false, message: err.message }));
+    });
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function sendEmailToAdmin(req, res, next) {
+  userService.sendEmailToAdmin(req)
+    .then((result) => {
+      console.log('sendEmailToAdmin service result:', result);
+      return result ? res.json({ status: true, message: "student enrolled email sent successfully." }) : res.json({ status: false, message: "Error in sending email to admin." });
+    })
+    .catch((err) => {
+      console.error('Error in sendEmailToAdmin controller:', err);
+      next(res.json({ status: false, message: err.message }));
+    });
+}
 /*****************************************************************************************/
 /*****************************************************************************************/

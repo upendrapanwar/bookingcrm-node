@@ -30,6 +30,7 @@ const msg = require("../helpers/messages.json");
 const {
   User,
   Courses,
+  Orders,
 } = require("../helpers/db");
 
 module.exports = {
@@ -37,15 +38,18 @@ module.exports = {
   authenticate,
   getAllUsers,
   getAllCourses,
+
+  // stripe 
   checkoutSession,
   placedOrder,
-  // createPaymentIntent,,
 
-//*********************email functionality */
-  userSupportEmail, 
-  userContactUs,
-  supportReqCall,
+  //nodeMailer 
   sendPaymentEmail,
+  sendWellcomeEmail,
+  sendEmailToAdmin,
+
+  //orders
+  saveOrderDetails,
 };
 
 /*****************************************************************************************/
@@ -170,7 +174,7 @@ async function getAllCourses(param) {
 
   if (result && result.length > 0) return result;
 
-  
+
   return false;
 }
 
@@ -179,18 +183,28 @@ async function getAllCourses(param) {
 // **********************************************************
 // Stripe
 async function checkoutSession(req) {
-  console.log("req",req);
+  console.log("req", req);
 
   try {
-    const { amount } = req.body;
-    console.log("amount",amount);
+    const { name, email,  amount } = req.body;
+
+
+    const customer = await stripe.customers.create({
+      email: email,
+      name: name,
+    });
+
+    console.log("customer",customer);
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: "eur",
+      customer : customer.id,
       automatic_payment_methods: {
         enabled: true,
       },
     });
+    console.log("paymentIntent", paymentIntent);
 
     return paymentIntent;
 
@@ -201,8 +215,55 @@ async function checkoutSession(req) {
 }
 //**********************************************************/
 // **********************************************************
+
+// async function createInvoice(req) {
+
+//   const { paymentIntentId } = req.body;
+
+//   console.log("Request Body:", paymentIntentId);
+//   try {
+//     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+//     console.log("paymentIntentpaymentIntentpaymentIntentpaymentIntent", paymentIntent)
+
+//     const invoice = await stripe.invoices.create({
+//       customer: paymentIntent.customer,
+//       collection_method: "send_invoice",
+//       days_until_due: 30,
+//       auto_advance: true,
+//       description: "Invoice for payment",
+//     });
+
+//     await stripe.invoices.finalizeInvoice(invoice.id);
+//     // console.log("invoice created", invoice)
+//     return invoice;
+//   } catch (err) {
+//     console.error("Error creating invoice:", err);
+//     return false;
+//   }
+// }
+
+
+// async function paymentVerify(req) {
+//   console.log("req", req);
+//   try {
+//     const { payment_intent } = req.body;
+
+//     const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent);
+
+//     if (paymentIntent.status === "succeeded") {
+//       return paymentIntent;
+//     }
+//   } catch (err) {
+//     console.error("error", err);
+//     return false;
+//   }
+// }
+
+
+//**********************************************************/
+// **********************************************************
 async function placedOrder(param) {
-  console.log("param",param);
+  console.log("param", param);
   // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
   //   email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv } = req.body;
   // try {
@@ -224,243 +285,18 @@ async function placedOrder(param) {
   // }
 }
 
-
-
-
 /*****************************************************************************************/
 /*****************************************************************************************/
-
-
-
-//Support Email
-async function userSupportEmail(param) {
-  const email = param.email;
-  const name = param.name;
-  const message = param.message;
-
-  const mailOptions = {
-
-    from: `"Payearth Support" <${email}>`,
-    replyTo: `${email}`,
-    to: config.mail_from_email,
-    subject: `"Support Message from user" ${name}`,
-    text: `"You have received a message from " + ${name}`,
-    html: `
-  <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-  <!-- Header -->
-  <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-    <img src="https://pay.earth:7700/uploads/logo.png" alt="Payearth" style="height: 40px;" />
-  </div>
-
-  <!-- Body -->
-  <div style="padding: 20px; background-color: #f9f9f9;">
-    <h2 style="color: #333;">New Support Message from User ${name}</h2>
-
-    <p>Hello Payearth Admin,</p>
-
-    <p>You have received a new message from the support on payearth. Here are the details:</p>
-
-    <div style="margin-bottom: 20px;">
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-    </div>
-
-    <div style="padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px;">
-      <p><strong>Message:</strong></p>
-      <p>${message}</p>
-    </div>
-
-    <p>Please review the message and respond as needed.</p>
-
-    <p style="font-style: italic;">— The Payearth Team</p>
-  </div>
-
-  <!-- Footer -->
-  <div style="padding: 10px; background-color: #6772E5; text-align: center; font-size: 12px; color: #aaa;">
-    <p>Payearth, 1234 Street Name, City, State, 12345</p>
-
-    <p>&copy; ${new Date().getFullYear()} Payearth. All rights reserved.</p>
-  </div>
-  </div>
-   `
-  };
-
-
-  try {
-    await SendEmail(mailOptions);
-    return mailOptions;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return false
-  }
-}
-
-/*****************************************************************************************/
-/*****************************************************************************************/
-
-
-//User Contact-Us
-async function userContactUs(param) {
-  const email = param.email;
-
-  const user = await User.findOne({ email });
-  console.log("user", user)
-
-  if (!user) {
-    console.log("email address not found. Please try again.");
-    return false;
-  }
-
-  const mailOptions = {
-
-    from: `"Payearth Support" <${param.email}>`,
-    replyTo: `${param.email}`,
-    to: config.mail_from_email,
-    subject: `"Contact Us Message from user" ${param.name}`,
-    text: "You have received a message from " + user.name,
-    html: `
-  <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-  <!-- Header -->
-  <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-    <img src="https://pay.earth:7700/uploads/logo.png" alt="Payearth" style="height: 40px;" />
-  </div>
-
-  <!-- Body -->
-  <div style="padding: 20px; background-color: #f9f9f9;">
-    <h2 style="color: #333;">New Contact Us Message from User ${user.name}</h2>
-
-    <p>Hello Payearth Admin,</p>
-
-    <p>You have received a new message from the contact us on payearth. Here are the details:</p>
-
-    <div style="margin-bottom: 20px;">
-      <p><strong>Name:</strong> ${param.name}</p>
-      <p><strong>Email:</strong> ${param.email}</p>
-    </div>
-
-    <div style="padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px;">
-      <p><strong>Message:</strong></p>
-      <p>${param.message}</p>
-    </div>
-
-    <p>Please review the message and respond as needed.</p>
-
-    <p style="font-style: italic;">— The Payearth Team</p>
-  </div>
-
-  <!-- Footer -->
-  <div style="padding: 10px; background-color: #6772E5; text-align: center; font-size: 12px; color: #aaa;">
-    <p>Payearth, 1234 Street Name, City, State, 12345</p>
-
-    <p>&copy; ${new Date().getFullYear()} Payearth. All rights reserved.</p>
-  </div>
-  </div>
-   `
-  };
-
-
-  try {
-    await SendEmail(mailOptions);
-    return mailOptions;
-  } catch (error) {
-    console.error("Error sending email:", error);
-    return false
-  }
-}
-
-
-
-
-
-
-
-/*****************************************************************************************/
-/*****************************************************************************************/
-
-async function supportReqCall(req) {
-  try {
-    const { user_id, seller_id, name, email, phone, message, call_status } = req.body;
-
-    const data = new Support({
-      user_id,
-      seller_id,
-      name,
-      email,
-      phone,
-      message,
-      call_status
-    });
-
-    const result = await data.save();
-
-
-    const mailOptions = {
-      from: `"Payearth Support" <${email}>`,
-      replyTo: `${email}`,
-      to: config.mail_from_email,
-      subject: `Support call request from user ${name}`,
-      text: "",
-      html: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-        <!-- Header -->
-        <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-          <img src="https://pay.earth:7700/uploads/logo.png" alt="Payearth" style="height: 40px;" />
-        </div>
-
-        <!-- Body -->
-        <div style="padding: 20px; background-color: #f9f9f9;">
-          <h2 style="color: #333;">New Support call request from User ${name}</h2>
-          <p>Hello Payearth Admin,</p>
-          <p>You have received a new message from the support call request on Payearth. Here are the details:</p>
-
-          <div style="margin-bottom: 20px;">
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Phone:</strong> ${phone}</p>
-            <p><strong>Call Status:</strong> ${call_status}</p>
-          </div>
-
-          <div style="padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px;">
-            <p><strong>Message:</strong></p>
-            <p>${message}</p>
-          </div>
-
-          <p>Please review the message and respond as needed.</p>
-          <p style="font-style: italic;">— The Payearth Team</p>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding: 10px; background-color: #6772E5; text-align: center; font-size: 12px; color: #aaa;">
-          <p>Payearth, 1234 Street Name, City, State, 12345</p>
-          <p>&copy; ${new Date().getFullYear()} Payearth. All rights reserved.</p>
-        </div>
-      </div>
-      `
-    };
-
-    await SendEmail(mailOptions);
-
-    return result;
-  } catch (error) {
-    console.error("Error:", error);
-    return false;
-  }
-}
-
-/*****************************************************************************************/
-/*****************************************************************************************/
-
 async function sendPaymentEmail(param) {
-  const { paymentIntent, amount, email, name } = param;
-  
-  const formattedAmount = (amount / 100).toFixed(2); // Convert cents to dollars/euros
-  
+  console.log('sendPaymentEmail', param.body);
+  const { paymentIntent, amount, email, name } = param.body;
+
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
     to: email,
     subject: "Payment Confirmation - Booking App Live",
     html: `
-    <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
       <!-- Header -->
       <div style="background-color: #6772E5; padding: 20px; text-align: center;">
         <h1 style="color: white; margin: 0;">Payment Confirmation</h1>
@@ -468,16 +304,14 @@ async function sendPaymentEmail(param) {
 
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Thank you for your payment!</h2>
+        <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
         
-        <p>Dear ${name},</p>
-        
-        <p>We're writing to confirm that your payment has been successfully processed.</p>
+        <p>We are pleased to inform you that your payment has been successfully processed.</p>
 
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Amount Paid:</strong> €${formattedAmount}</p>
-          <p><strong>Transaction ID:</strong> ${paymentIntent}</p>
+          <p><strong>Payment Intent ID:</strong> ${paymentIntent}</p>
+          <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
         </div>
 
@@ -499,7 +333,8 @@ async function sendPaymentEmail(param) {
   };
 
   try {
-    await SendEmail(mailOptions);
+    const emailResult = await SendEmail(mailOptions);
+    console.log('Email sent result:', emailResult);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
     console.error("Error sending payment confirmation email:", error);
@@ -509,3 +344,145 @@ async function sendPaymentEmail(param) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function saveOrderDetails(param) {
+  console.log('saveOrderDetails', param)
+  try {
+      const orders = new Orders({
+     
+        firstName: param.formvalues.firstName,
+        lastName: param.formvalues.lastName,
+        companyName: param.formvalues.companyName,
+        country: param.formvalues.country,
+        streetAddress: param.formvalues.streetAddress,
+        flat: param.formvalues.flat,
+        city: param.formvalues.city,
+        county: param.formvalues.county,
+        postcode: param.formvalues.postcode,
+        email: param.formvalues.email,
+        phoneNumber: param.formvalues.phoneNumber,
+        acknowledge: param.formvalues.acknowledge,
+        // cardNumber: param.formvalues.cardNumber,
+        // expiryDate: param.formvalues.expiryDate,
+        // cvv: param.formvalues.cvv,
+        paymentIntentID: param.paymentIntent.id,
+        amount: param.paymentIntent.amount,
+      })
+
+      const orderdata = await orders.save();
+      if (orderdata) {
+          return orderdata;
+      } else {
+          return false;
+      }
+  } catch (error) {
+      console.error('Error adding course:', error);
+      throw new Error('Could not add course. Please try again later.');
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function sendWellcomeEmail(param) {
+  console.log('sendPaymentEmail', param.body);
+  const { email, firstName } = param.body.formvalues;
+
+  const mailOptions = {
+    from: `"Booking App Live" <${config.mail_from_email}>`,
+    to: email,
+    subject: "Welcome to Booking App Live!",
+    html: `
+     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+      <!-- Header -->
+      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Welcome to Booking App Live!</h1>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; background-color: #f9f9f9;">
+        <h2 style="color: #333;">Hello, ${firstName}!</h2>
+        
+        <p>We are thrilled to have you on board. Thank you for joining Booking App Live!</p>
+
+        <p>Our platform offers a wide range of features to help you manage your bookings efficiently. If you have any questions or need assistance, feel free to reach out to our support team.</p>
+
+        <p style="font-style: italic;">We look forward to serving you!</p>
+        
+        <p>Best regards,<br>The Booking App Live Team</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+        <p style="color: white; margin: 0; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+        </p>
+      </div>
+    </div>
+    `
+  };
+
+  try {
+    const emailResult = await SendEmail(mailOptions);
+    console.log('sendWellcomeEmail email sent result:', emailResult);
+    return { success: true, message: "Wellcome email sent successfully" };
+  } catch (error) {
+    console.error("Error sending wellcome email:", error);
+    return { success: false, message: "Failed to send wellcome email" };
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function sendEmailToAdmin(param) {
+  console.log('sendEmailToAdmin', param.body);
+  const { email, firstName } = param.body.formvalues;
+  const { paymentIntent } = param.body.paymentIntent;
+
+  const mailOptions = {
+    from: `"Booking App Live" <${config.mail_from_email}>`,
+    to: `"Booking App Live" <${config.mail_from_email}>`,
+    subject: "New Student Enrolled - Booking App Live",
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+      <!-- Header -->
+      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">New Student Enrolled</h1>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; background-color: #f9f9f9;">
+        <h2 style="color: #333;">Hello Admin,</h2>
+        
+        <p>We are excited to inform you that a new Student has Enrolled in Booking App Live!</p>
+
+        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
+          <p><strong>Name:</strong> ${firstName}</p>
+          <p><strong>Email:</strong> ${email}</p>
+        </div>
+
+        <p>Please ensure to welcome them and provide any necessary support.</p>
+
+        <p style="font-style: italic;">Thank you for your continued support!</p>
+        
+        <p>Best regards,<br>The Booking App Live Team</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+        <p style="color: white; margin: 0; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+        </p>
+      </div>
+    </div>
+    `
+  };
+
+  try {
+    const emailResult = await SendEmail(mailOptions);
+    console.log('sendEmailToAdmin sent result:', emailResult);
+    return { success: true, message: "Student enrolled email to admin sent successfully" };
+  } catch (error) {
+    console.error("Error sending student enrolled email to admin:", error);
+    return { success: false, message: "Failed to send student enrolled email to admin" };
+  }
+}

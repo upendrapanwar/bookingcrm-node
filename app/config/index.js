@@ -21,9 +21,8 @@ module.exports = {
   mail_from_email: process.env.MAIL_FROM_EMAIL,
 //   ssl_cert: process.env.SSL_CERT,
 //   ssl_key: process.env.SSL_KEY,
-//   stripe_secret_key: process.env.STRIPE_SECRET_KEY
+  stripe_secret_key: process.env.STRIPE_SECRET_KEY,
+  stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY
 };
-
-
 
 
