@@ -16,6 +16,7 @@ router.put('/update_course', updateCourse);
 router.put('/delete_course', deleteCourse);
 router.get('/getcategory/:id', getcategoryById);
 router.put('/edit_category/:id', editCategory);
+router.post('/add_instructor', addInstructor);
 
 
 module.exports = router;
@@ -344,6 +345,38 @@ function editCategory(req, res, next) {
                     .json({
                         status: false,
                         message: msg.admin.get_categories.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to add Instructor
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function addInstructor(req, res, next) {
+    adminService
+        .addInstructor(req.body)
+        .then((instructorData) =>
+            instructorData
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.add_instructor.success,
+                    data: instructorData,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.add_instructor.error
                     })
         )
         .catch((err) =>

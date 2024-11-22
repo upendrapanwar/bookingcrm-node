@@ -11,8 +11,10 @@ const package = require("package.json");
 const app = express();
 const https = require("https");
 const fs = require("fs");
-// const setupSocket1 = require("./app/helpers/socket-io");
+
+const http = require("http");
 // const socketIo = require("socket.io");
+// const setupSocket1 = require("./app/helpers/socket-io");
 
 const mongoose = require('mongoose');
 
@@ -87,8 +89,25 @@ app.use(
     //log.Info(`Server Running at ${PORT} on ${process.env.NODE_ENV}...`)
 //  });
 
-  app.listen(PORT, () => {
+// Create an HTTP server
+const server = http.createServer(app);
+
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
   });
 
+
+// const io = socketIo(server);
+//   io.on('connection', (socket) => {
+//     console.log('A user connected');
+  
+//     notificationController(socket);
+
+//     // Handle disconnection
+//     socket.on('disconnect', () => {
+//       console.log('User disconnected'); 
+//     });
+  
+//     // Add more event handlers as needed
+//   });
 

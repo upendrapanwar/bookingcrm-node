@@ -19,6 +19,8 @@ const {
     User,
     Courses,
     Categories,
+    Instructors,
+    Orders,
 } = require("../helpers/db");
 
 module.exports = {
@@ -32,6 +34,7 @@ module.exports = {
     deleteCourse,
     getcategoryById,
     editCategory,
+    addInstructor,
 };
 
 /*****************************************************************************************/
@@ -351,3 +354,28 @@ async function editCategory(req) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function addInstructor(param) {
+    console.log('param of instructor form---', param)
+    try {
+        const instructor = new Instructors({
+            first_name: param.first_name,
+            last_name: param.last_name,
+            email: param.email,
+            phone: param.contact_no,
+            instructor_image: param.instructor_image,
+            createdBy: param.created_by,
+            instructor_unavailable_dates: param.instructor_unavailable_dates,
+
+        })
+
+        const instructorData = await instructor.save();
+        if (instructorData) {
+            return instructorData;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error adding instructor:', error);
+        throw new Error('Could not add instructor. Please try again later.');
+    }
+}
