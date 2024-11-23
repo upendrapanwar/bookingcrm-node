@@ -22,6 +22,7 @@ router.post("/checkoutSession", checkoutSession);
 
 //order
 router.post("/save-order-details", saveOrderDetails);
+router.get("/get-order-details", getOrderDetails);
 
 //node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
@@ -225,6 +226,23 @@ function sendEmailToAdmin(req, res, next) {
       console.error('Error in sendEmailToAdmin controller:', err);
       next(res.json({ status: false, message: err.message }));
     });
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all the order details 
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getOrderDetails(req, res, next) {
+  console.log('getOrderDetails', req.query);
+  userService.getOrderDetails(req.query.id)
+    .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
 }
 /*****************************************************************************************/
 /*****************************************************************************************/

@@ -50,6 +50,7 @@ module.exports = {
 
   //orders
   saveOrderDetails,
+  getOrderDetails,
 };
 
 /*****************************************************************************************/
@@ -183,7 +184,7 @@ async function getAllCourses(param) {
 // **********************************************************
 // Stripe
 async function checkoutSession(req) {
-  console.log("req", req);
+ // console.log("req", req);
 
   try {
     const { name, email,  amount } = req.body;
@@ -194,7 +195,7 @@ async function checkoutSession(req) {
       name: name,
     });
 
-    console.log("customer",customer);
+   // console.log("customer",customer);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -204,7 +205,7 @@ async function checkoutSession(req) {
         enabled: true,
       },
     });
-    console.log("paymentIntent", paymentIntent);
+   // console.log("paymentIntent", paymentIntent);
 
     return paymentIntent;
 
@@ -263,7 +264,7 @@ async function checkoutSession(req) {
 //**********************************************************/
 // **********************************************************
 async function placedOrder(param) {
-  console.log("param", param);
+ // console.log("param", param);
   // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
   //   email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv } = req.body;
   // try {
@@ -288,7 +289,7 @@ async function placedOrder(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
-  console.log('sendPaymentEmail', param.body);
+ // console.log('sendPaymentEmail', param.body);
   const { paymentIntent, amount, email, name } = param.body;
 
   const mailOptions = {
@@ -334,7 +335,7 @@ async function sendPaymentEmail(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('Email sent result:', emailResult);
+   // console.log('Email sent result:', emailResult);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
     console.error("Error sending payment confirmation email:", error);
@@ -345,7 +346,7 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function saveOrderDetails(param) {
-  console.log('saveOrderDetails', param)
+  console.log('saveOrderDetails', param);
   try {
       const orders = new Orders({
      
@@ -366,6 +367,7 @@ async function saveOrderDetails(param) {
         // cvv: param.formvalues.cvv,
         paymentIntentID: param.paymentIntent.id,
         amount: param.paymentIntent.amount,
+        courses: param.coursesData
       })
 
       const orderdata = await orders.save();
@@ -383,7 +385,7 @@ async function saveOrderDetails(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendWellcomeEmail(param) {
-  console.log('sendPaymentEmail', param.body);
+ // console.log('sendPaymentEmail', param.body);
   const { email, firstName } = param.body.formvalues;
 
   const mailOptions = {
@@ -422,7 +424,7 @@ async function sendWellcomeEmail(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('sendWellcomeEmail email sent result:', emailResult);
+   // console.log('sendWellcomeEmail email sent result:', emailResult);
     return { success: true, message: "Wellcome email sent successfully" };
   } catch (error) {
     console.error("Error sending wellcome email:", error);
@@ -433,7 +435,7 @@ async function sendWellcomeEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToAdmin(param) {
-  console.log('sendEmailToAdmin', param.body);
+//  console.log('sendEmailToAdmin', param.body);
   const { email, firstName } = param.body.formvalues;
   const { paymentIntent } = param.body.paymentIntent;
 
@@ -479,10 +481,34 @@ async function sendEmailToAdmin(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('sendEmailToAdmin sent result:', emailResult);
+   // console.log('sendEmailToAdmin sent result:', emailResult);
     return { success: true, message: "Student enrolled email to admin sent successfully" };
   } catch (error) {
     console.error("Error sending student enrolled email to admin:", error);
     return { success: false, message: "Failed to send student enrolled email to admin" };
   }
 }
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get All Order Details
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getOrderDetails(id) {
+  console.log('getOrderDetails', id);
+  try {
+      // Find a specific order by ID
+      const order = await Orders.findById(id).select();
+      return order ? order : false;
+  } catch (error) {
+    console.error('Error fetching order details:', error);
+    throw new Error('Could not fetch order details. Please try again later.');
+  }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+

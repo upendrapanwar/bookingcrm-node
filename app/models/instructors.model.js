@@ -9,7 +9,7 @@ const instructorSchema = new Schema({
     phone: { type: String, required: true },
     instructor_image: { type: String, required: false },
     instructor_unavailable_dates: { type: [Date], required: false },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
 }, {
     timestamps: true
 });

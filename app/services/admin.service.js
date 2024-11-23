@@ -35,6 +35,7 @@ module.exports = {
     getcategoryById,
     editCategory,
     addInstructor,
+    getInstructors,
 };
 
 /*****************************************************************************************/
@@ -378,4 +379,24 @@ async function addInstructor(param) {
         console.error('Error adding instructor:', error);
         throw new Error('Could not add instructor. Please try again later.');
     }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Manages get Course operations
+ *
+ * @param {param}
+ *
+ * @returns Object|null
+ */
+async function getInstructors(param) {
+    const result = await Instructors.find()
+        .populate('createdBy')
+        .select()
+        .sort({ createdAt: 'desc' })
+        .exec();
+
+    if (result && result.length > 0) return result;
+
+    return false;
 }
