@@ -16,9 +16,9 @@ const paymentSchema = new Schema({
     email: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     acknowledge: { type: Boolean, required: true },
-    cardNumber: { type: String, required: true },
-    expiryDate: { type: String, required: true },
-    cvv: { type: String, required: true },
+    // cardNumber: { type: String, required: true },
+    // expiryDate: { type: String, required: true },
+    // cvv: { type: String, required: true },
 }, {
     timestamps: true
 });

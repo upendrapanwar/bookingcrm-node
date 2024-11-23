@@ -35,13 +35,13 @@ const {
 
 module.exports = {
   create,
+  studentRegister,
   authenticate,
   getAllUsers,
   getAllCourses,
 
   // stripe 
   checkoutSession,
-  placedOrder,
 
   //nodeMailer 
   sendPaymentEmail,
@@ -105,7 +105,57 @@ async function create(param) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
+//student registration after course payment succeed
+async function studentRegister(param) {
+  try {
+    // Check if email exists
+    const existingUser = await User.findOne({ email: param.formvalues.email });
+    
+    if (existingUser) {
+      console.log('email "' + param.formvalues.email + '" is already taken');
+      return {
+        exists: true,
+        data: null
+      };
+    }
 
+    // Create new user if email doesn't exist
+    const user = new User({
+      first_name: param.formvalues.firstName,
+      last_name: param.formvalues.lastName,
+      gender: param.formvalues.gender,
+      email: param.formvalues.email,
+      role: 'student',
+      phone: param.formvalues.phoneNumber,
+      isActive: true,
+      country: param.formvalues.county,
+      state: param.formvalues.state,
+      address: param.formvalues.streetAddress,
+      flat: param.formvalues.flat,
+      city: param.formvalues.city,
+      county: param.formvalues.county,
+      postcode: param.formvalues.postcode,
+      acknowledge: false,
+    });
+
+    const savedUser = await user.save();
+    
+    return {
+      exists: false,
+      data: savedUser
+    };
+
+  } catch (err) {
+    console.log("Error", err);
+    return {
+      exists: false,
+      data: null
+    };
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
 /**
  * Manages user login operations
  *
@@ -177,34 +227,31 @@ async function getAllCourses(param) {
 
   return false;
 }
-
-
 //********************************************************* */
 // **********************************************************
 // Stripe
 async function checkoutSession(req) {
-  console.log("req", req);
-
   try {
-    const { name, email,  amount } = req.body;
-
+    const { name, email, amount, cart, phoneNumber, county } = req.body;
 
     const customer = await stripe.customers.create({
       email: email,
       name: name,
+      Phone: phoneNumber,
+      Country : county,
     });
-
-    console.log("customer",customer);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: "eur",
-      customer : customer.id,
+      customer: customer.id,
       automatic_payment_methods: {
         enabled: true,
       },
+      metadata: {
+        cart: cart,
+      },
     });
-    console.log("paymentIntent", paymentIntent);
 
     return paymentIntent;
 
@@ -213,82 +260,9 @@ async function checkoutSession(req) {
     return false;
   }
 }
-//**********************************************************/
-// **********************************************************
-
-// async function createInvoice(req) {
-
-//   const { paymentIntentId } = req.body;
-
-//   console.log("Request Body:", paymentIntentId);
-//   try {
-//     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-//     console.log("paymentIntentpaymentIntentpaymentIntentpaymentIntent", paymentIntent)
-
-//     const invoice = await stripe.invoices.create({
-//       customer: paymentIntent.customer,
-//       collection_method: "send_invoice",
-//       days_until_due: 30,
-//       auto_advance: true,
-//       description: "Invoice for payment",
-//     });
-
-//     await stripe.invoices.finalizeInvoice(invoice.id);
-//     // console.log("invoice created", invoice)
-//     return invoice;
-//   } catch (err) {
-//     console.error("Error creating invoice:", err);
-//     return false;
-//   }
-// }
-
-
-// async function paymentVerify(req) {
-//   console.log("req", req);
-//   try {
-//     const { payment_intent } = req.body;
-
-//     const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent);
-
-//     if (paymentIntent.status === "succeeded") {
-//       return paymentIntent;
-//     }
-//   } catch (err) {
-//     console.error("error", err);
-//     return false;
-//   }
-// }
-
-
-//**********************************************************/
-// **********************************************************
-async function placedOrder(param) {
-  console.log("param", param);
-  // const {userId, firstName, lastName, companyName, country, streetAddress, flat, city, county, postcode,
-  //   email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv } = req.body;
-  // try {
-  //   const result = new Payment({userId,
-  //     firstName, lastName, companyName, country, streetAddress,
-  //     flat, city, county, postcode, email, phoneNumber, acknowledge, cardNumber, expiryDate, cvv
-  //   });
-  //   console.log("result", result);
-
-  //   if (result) {
-  //     await result.save();
-  //     return result;
-  //   } else {
-  //     return false;
-  //   }
-  // } catch (error) {
-  //   console.error('Error placed Order:', error);
-  //   throw new Error('Could not placed order. Please try again later.');
-  // }
-}
-
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
-  console.log('sendPaymentEmail', param.body);
   const { paymentIntent, amount, email, name } = param.body;
 
   const mailOptions = {
@@ -334,7 +308,6 @@ async function sendPaymentEmail(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('Email sent result:', emailResult);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
     console.error("Error sending payment confirmation email:", error);
@@ -345,45 +318,43 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function saveOrderDetails(param) {
-  console.log('saveOrderDetails', param)
   try {
-      const orders = new Orders({
-     
-        firstName: param.formvalues.firstName,
-        lastName: param.formvalues.lastName,
-        companyName: param.formvalues.companyName,
-        country: param.formvalues.country,
-        streetAddress: param.formvalues.streetAddress,
-        flat: param.formvalues.flat,
-        city: param.formvalues.city,
-        county: param.formvalues.county,
-        postcode: param.formvalues.postcode,
-        email: param.formvalues.email,
-        phoneNumber: param.formvalues.phoneNumber,
-        acknowledge: param.formvalues.acknowledge,
-        // cardNumber: param.formvalues.cardNumber,
-        // expiryDate: param.formvalues.expiryDate,
-        // cvv: param.formvalues.cvv,
-        paymentIntentID: param.paymentIntent.id,
-        amount: param.paymentIntent.amount,
-      })
+    const orders = new Orders({
 
-      const orderdata = await orders.save();
-      if (orderdata) {
-          return orderdata;
-      } else {
-          return false;
-      }
+      firstName: param.formvalues.firstName,
+      lastName: param.formvalues.lastName,
+      companyName: param.formvalues.companyName,
+      country: param.formvalues.country,
+      streetAddress: param.formvalues.streetAddress,
+      flat: param.formvalues.flat,
+      city: param.formvalues.city,
+      county: param.formvalues.county,
+      postcode: param.formvalues.postcode,
+      email: param.formvalues.email,
+      phoneNumber: param.formvalues.phoneNumber,
+      acknowledge: param.formvalues.acknowledge,
+      // cardNumber: param.formvalues.cardNumber,
+      // expiryDate: param.formvalues.expiryDate,
+      // cvv: param.formvalues.cvv,
+      paymentIntentID: param.paymentIntent.id,
+      amount: param.paymentIntent.amount,
+    })
+
+    const orderdata = await orders.save();
+    if (orderdata) {
+      return orderdata;
+    } else {
+      return false;
+    }
   } catch (error) {
-      console.error('Error adding course:', error);
-      throw new Error('Could not add course. Please try again later.');
+    console.error('Error adding course:', error);
+    throw new Error('Could not add course. Please try again later.');
   }
 }
 
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendWellcomeEmail(param) {
-  console.log('sendPaymentEmail', param.body);
   const { email, firstName } = param.body.formvalues;
 
   const mailOptions = {
@@ -422,7 +393,6 @@ async function sendWellcomeEmail(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('sendWellcomeEmail email sent result:', emailResult);
     return { success: true, message: "Wellcome email sent successfully" };
   } catch (error) {
     console.error("Error sending wellcome email:", error);
@@ -433,7 +403,6 @@ async function sendWellcomeEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToAdmin(param) {
-  console.log('sendEmailToAdmin', param.body);
   const { email, firstName } = param.body.formvalues;
   const { paymentIntent } = param.body.paymentIntent;
 
@@ -479,7 +448,6 @@ async function sendEmailToAdmin(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    console.log('sendEmailToAdmin sent result:', emailResult);
     return { success: true, message: "Student enrolled email to admin sent successfully" };
   } catch (error) {
     console.error("Error sending student enrolled email to admin:", error);
