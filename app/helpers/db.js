@@ -4,4 +4,5 @@ module.exports = {
     Categories : require('../models/categories.model'),
     Orders : require('../models/orders.model'),
     Instructors : require('../models/instructors.model'),
+    Payments : require('../models/payments.model'),
 }

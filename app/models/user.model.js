@@ -14,6 +14,12 @@ const schema = new Schema({
     country: { type: String, required: false, default: '' },
     postcode: { type: String, required: false, default: '' },
     isActive: { type: Boolean, required: false, default: true },
+    password: { type: String, required: false, default: '' },
+    reset_password: {
+        verif_code: { type: String, required: false, default: null },
+        code_valid_at: { type: Date, required: false, default: null },
+        is_pass_req: { type: Boolean, required: false, default: false },
+    }
 }, {
     timestamps: true
 });

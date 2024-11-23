@@ -31,6 +31,8 @@ const {
   User,
   Courses,
   Orders,
+  Payments,
+  Instructor
 } = require("../helpers/db");
 
 module.exports = {
@@ -51,6 +53,9 @@ module.exports = {
   //orders
   saveOrderDetails,
   getOrderDetails,
+
+  //payment
+  savePaymentDetails,
 };
 
 /*****************************************************************************************/
@@ -116,7 +121,7 @@ async function studentRegister(param) {
       console.log('email "' + param.formvalues.email + '" is already taken');
       return {
         exists: true,
-        data: null
+        data: existingUser
       };
     }
 
@@ -319,7 +324,7 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function saveOrderDetails(param) {
-  console.log('saveOrderDetails', param);
+//  console.log('saveOrderDetails', param);
   try {
       const orders = new Orders({
      
@@ -467,16 +472,47 @@ async function sendEmailToAdmin(param) {
  * @returns Object|null
  */
 async function getOrderDetails(id) {
-  console.log('getOrderDetails', id);
+ // console.log('getOrderDetails', id);
   try {
       // Find a specific order by ID
       const order = await Orders.findById(id).select();
       return order ? order : false;
   } catch (error) {
-    console.error('Error fetching order details:', error);
+  console.error('Error fetching order details:', error);
     throw new Error('Could not fetch order details. Please try again later.');
   }
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function savePaymentDetails(param) {
+  console.log('savePaymentDetails', param);
+  try {
+      const orders = new Payments({
+        userId: param.studentRegisterResponse.data.id,
+        firstName: param.studentRegisterResponse.data.first_name,
+        lastName: param.studentRegisterResponse.data.last_name,
+        email: param.studentRegisterResponse.data.email,
+        phoneNumber: param.studentRegisterResponse.data.phone,
+        
+        paymentIntentID: param.paymentIntent.id,
+        paymentStatus: param.paymentIntent.status,
+        amount: param.paymentIntent.amount,
 
+        orderId: param.orderDetails.id, 
+
+        courses: param.coursesData
+      })
+    const orderdata = await orders.save();
+    if (orderdata) {
+      return orderdata;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error('Error adding course:', error);
+    throw new Error('Could not add course. Please try again later.');
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/

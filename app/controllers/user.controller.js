@@ -27,6 +27,9 @@ router.post("/send-payment-email", sendPaymentEmail);
 router.post("/send-wellcome-email", sendWellcomeEmail);
 router.post("/send-student-enrolled-email", sendEmailToAdmin);
 
+//payment
+router.post("/save-payment-details", savePaymentDetails);
+
 
 module.exports = router;
 
@@ -81,7 +84,8 @@ function studentRegister(req, res, next) {
         res.status(200).json({
           status: false,
           message: "User already exists!",
-          exists: true
+          exists: true,
+          data: result.data
         });
       } else if (result.data) {
         // Successful registration case
@@ -243,6 +247,13 @@ function getOrderDetails(req, res, next) {
   userService.getOrderDetails(req.query.id)
     .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
     .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function savePaymentDetails(req, res, next) {
+  userService.savePaymentDetails(req.body)
+    .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+    .catch((err) => next(res.status(400).json({ status: false, message: err })));
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
