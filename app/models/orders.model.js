@@ -21,6 +21,11 @@ const orderSchema = new Schema({
     // cvv: { type: String, required: false },
     paymentIntentID: { type: String, required: true },
     amount: { type: Number, required: true },
+    courses: { type: Array, required: true },
+    // courses: [{
+    //     courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Courses', required: true },
+    //     quantity: { type: Number, required: true }
+    // }],
 }, {
     timestamps: true
 });

@@ -20,6 +20,7 @@
     "nodemailer": "^6.9.16",
     "rootpath": "^0.1.2",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.1",
     "stripe": "^17.3.1"
   }
 }

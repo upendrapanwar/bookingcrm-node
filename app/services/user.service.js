@@ -50,6 +50,7 @@ module.exports = {
 
   //orders
   saveOrderDetails,
+  getOrderDetails,
 };
 
 /*****************************************************************************************/
@@ -318,28 +319,29 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function saveOrderDetails(param) {
+  console.log('saveOrderDetails', param);
   try {
-    const orders = new Orders({
-
-      firstName: param.formvalues.firstName,
-      lastName: param.formvalues.lastName,
-      companyName: param.formvalues.companyName,
-      country: param.formvalues.country,
-      streetAddress: param.formvalues.streetAddress,
-      flat: param.formvalues.flat,
-      city: param.formvalues.city,
-      county: param.formvalues.county,
-      postcode: param.formvalues.postcode,
-      email: param.formvalues.email,
-      phoneNumber: param.formvalues.phoneNumber,
-      acknowledge: param.formvalues.acknowledge,
-      // cardNumber: param.formvalues.cardNumber,
-      // expiryDate: param.formvalues.expiryDate,
-      // cvv: param.formvalues.cvv,
-      paymentIntentID: param.paymentIntent.id,
-      amount: param.paymentIntent.amount,
-    })
-
+      const orders = new Orders({
+     
+        firstName: param.formvalues.firstName,
+        lastName: param.formvalues.lastName,
+        companyName: param.formvalues.companyName,
+        country: param.formvalues.country,
+        streetAddress: param.formvalues.streetAddress,
+        flat: param.formvalues.flat,
+        city: param.formvalues.city,
+        county: param.formvalues.county,
+        postcode: param.formvalues.postcode,
+        email: param.formvalues.email,
+        phoneNumber: param.formvalues.phoneNumber,
+        acknowledge: param.formvalues.acknowledge,
+        // cardNumber: param.formvalues.cardNumber,
+        // expiryDate: param.formvalues.expiryDate,
+        // cvv: param.formvalues.cvv,
+        paymentIntentID: param.paymentIntent.id,
+        amount: param.paymentIntent.amount,
+        courses: param.coursesData
+      })
     const orderdata = await orders.save();
     if (orderdata) {
       return orderdata;
@@ -454,3 +456,27 @@ async function sendEmailToAdmin(param) {
     return { success: false, message: "Failed to send student enrolled email to admin" };
   }
 }
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get All Order Details
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getOrderDetails(id) {
+  console.log('getOrderDetails', id);
+  try {
+      // Find a specific order by ID
+      const order = await Orders.findById(id).select();
+      return order ? order : false;
+  } catch (error) {
+    console.error('Error fetching order details:', error);
+    throw new Error('Could not fetch order details. Please try again later.');
+  }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+

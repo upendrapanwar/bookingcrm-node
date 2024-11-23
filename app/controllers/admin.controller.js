@@ -16,6 +16,8 @@ router.put('/update_course', updateCourse);
 router.put('/delete_course', deleteCourse);
 router.get('/getcategory/:id', getcategoryById);
 router.put('/edit_category/:id', editCategory);
+router.post('/add_instructor', addInstructor);
+router.get('/get_instructors', getInstructors);
 
 
 module.exports = router;
@@ -350,3 +352,71 @@ function editCategory(req, res, next) {
             next(res.status(400).json({ status: false, message: err }))
         );
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to add Instructor
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function addInstructor(req, res, next) {
+    adminService
+        .addInstructor(req.body)
+        .then((instructorData) =>
+            instructorData
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.add_instructor.success,
+                    data: instructorData,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.add_instructor.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to get Instructors
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function getInstructors(req, res, next) {
+    adminService
+        .getInstructors(req)
+        .then((courses) =>
+            courses
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.get_instructors.success,
+                    data: courses,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.get_instructors.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+

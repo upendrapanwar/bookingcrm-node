@@ -63,6 +63,14 @@
         "delete_course": {
             "success": "Courses deleted successfully.",
             "error": "Failed to delete courses."
+        },
+        "add_instructor": {
+            "success": "Instructor added successfully.",
+            "error": "Failed to add instructor."
+        },
+        "get_instructors": {
+            "success": "Instructors get successfully.",
+            "error": "Failed to get instructors."
         }
     }
 }
