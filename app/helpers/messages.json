@@ -71,6 +71,14 @@
         "get_instructors": {
             "success": "Instructors get successfully.",
             "error": "Failed to get instructors."
+        },
+        "delete_instructor": {
+            "success": "Instructor deleted successfully.",
+            "error": "Failed to delete Instructor."
+        },
+        "update_instructor": {
+            "success": "Instructor updated successfully.",
+            "error": "Failed to update instructor."
         }
     }
 }

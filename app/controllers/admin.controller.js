@@ -18,6 +18,9 @@ router.get('/getcategory/:id', getcategoryById);
 router.put('/edit_category/:id', editCategory);
 router.post('/add_instructor', addInstructor);
 router.get('/get_instructors', getInstructors);
+router.get('/get_instructor_byId/:id',getInstructorById);
+router.put('/delete_instructor',deleteInstructor);
+router.put('/update_instructor',updateInstructor)
 
 
 module.exports = router;
@@ -167,7 +170,7 @@ function getCourseById(req, res, next) {
  * @return JSON|null
  */
 function updateCourse(req, res, next) {
-    console.log('req.body--',req.body)
+  //  console.log('req.body--',req.body)
     adminService
         .updateCourse(req.body)
         .then((coursedata) =>
@@ -419,4 +422,101 @@ function getInstructors(req, res, next) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
+/**
+ * Function to get Instructor byId
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function getInstructorById(req, res, next) {
+    adminService
+        .getInstructorById(req.params)
+        .then((instructor) =>
+            instructor
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.get_instructors.success,
+                    data: instructor,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.get_instructors.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
 
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to delete Instructer
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function deleteInstructor(req, res, next) {
+    adminService
+        .deleteInstructor(req.body)
+        .then((courses) =>
+            courses
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.delete_instructor.success,
+                    data: courses,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.delete_instructor.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to update Instructor
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function updateInstructor(req, res, next) {
+   // console.log('req.body--',req.body)
+    adminService
+        .updateInstructor(req.body)
+        .then((coursedata) =>
+            coursedata
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.update_instructor.success,
+                    data: coursedata,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.update_instructor.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
