@@ -6,10 +6,12 @@ const instructorSchema = new Schema({
     first_name: { type: String, required: true },
     last_name: { type: String, required: true },
     email: { type: String, required: true },
-    phone: { type: String, required: true },
+    contact_no: { type: String, required: true },
     instructor_image: { type: String, required: false },
     instructor_unavailable_dates: { type: [Date], required: false },
+    isActive: { type: Boolean, default: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+    updatedBy : {type: String, required: false, default: ''},
 }, {
     timestamps: true
 });
