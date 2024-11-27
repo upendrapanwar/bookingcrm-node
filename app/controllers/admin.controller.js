@@ -338,7 +338,7 @@ function editCategory(req, res, next) {
     adminService
         .editCategory(req)
         .then((result) =>
-            result
+            result 
                 ? res.status(201).json({
                     status: true,
                     message: msg.admin.get_categories.success,
