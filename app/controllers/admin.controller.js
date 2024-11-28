@@ -19,8 +19,10 @@ router.put('/edit_category/:id', editCategory);
 router.post('/add_instructor', addInstructor);
 router.get('/get_instructors', getInstructors);
 router.get('/get_instructor_byId/:id',getInstructorById);
+router.put('/update_status_instructor',updateInstructorStatus)
 router.put('/delete_instructor',deleteInstructor);
-router.put('/update_instructor',updateInstructor)
+router.put('/update_instructor',updateInstructor);
+router.put('/update_course_status',updateCourseStatus);
 
 
 module.exports = router;
@@ -512,6 +514,70 @@ function updateInstructor(req, res, next) {
                     .json({
                         status: false,
                         message: msg.admin.update_instructor.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to update Instructer status
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function updateInstructorStatus(req, res, next) {
+    adminService
+        .updateInstructorStatus(req.body)
+        .then((updatedInstructorStatus) =>
+            updatedInstructorStatus
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.update_instructor_status.success,
+                    data: updatedInstructorStatus,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.update_instructor_status.error
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to update Instructer status
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * 
+ * @return JSON|null
+ */
+function updateCourseStatus(req, res, next) {
+    adminService
+        .updateCourseStatus(req.body)
+        .then((updatedCourseStatus) =>
+            updatedCourseStatus
+                ? res.status(201).json({
+                    status: true,
+                    message: msg.admin.update_course_status.success,
+                    data: updatedCourseStatus,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: msg.admin.update_course_status.error
                     })
         )
         .catch((err) =>

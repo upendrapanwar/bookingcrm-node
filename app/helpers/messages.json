@@ -79,6 +79,14 @@
         "update_instructor": {
             "success": "Instructor updated successfully.",
             "error": "Failed to update instructor."
+        },
+        "update_instructor_status":{
+            "success": "Instructor status update successfully.",
+            "error": "Failed to update Instructor status."
+        },
+        "update_course_status":{
+            "success": "Course status update successfully.",
+            "error": "Failed to update Course status."
         }
     }
 }
