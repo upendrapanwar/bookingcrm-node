@@ -41,6 +41,8 @@ module.exports = {
     getInstructorById,
     deleteInstructor,
     updateInstructor,
+    updateInstructorStatus,
+    updateCourseStatus
 };
 
 /*****************************************************************************************/
@@ -451,16 +453,8 @@ async function deleteInstructor(param) {
     try {
         // console.log('deleteInstructor---',param)
         //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
-        const deletedInstructor = await Instructors.findOneAndUpdate(
-            { _id: param.id },
-            {
-                $set: {
-                    isActive: false,
-                },
-            },
-            { new: true }
-        );
-        if (deletedInstructor) {
+        const deletedInstructor = await Instructors.deleteOne({ _id: param.id });
+        if (deletedInstructor.deletedCount > 0) {
             return deletedInstructor;
         } else {
             return false;
@@ -522,8 +516,7 @@ async function updateInstructor(param) {
 async function sendEmailToInstructor(instructorData) {
     console.log('instructorData----send email---', instructorData)
     const { email, first_name, _id} = instructorData;
-    const instructor = {first_name, _id};
-    const scheduleSetupUrl = `${config.instructor_url}/${instructor}`;
+    const scheduleSetupUrl = `${config.instructor_url}?id=${_id}&name=${first_name}`;
     const mailOptions = {
         from: `"Booking App Live" <${config.mail_from_email}>`,
         to: email,
@@ -604,5 +597,64 @@ async function sendEmailToInstructor(instructorData) {
         return { success: false, message: "Failed to send Instructor Wellcome email to Instructor" };
     }
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Manages update Instructor status operations
+ *
+ * @param  {Object} param 
+ *
+ * @returns Object|null
+ */
+async function updateInstructorStatus(param) {
+    try {
+        // console.log('deleteInstructor---',param)
+        //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
+        const updatedInstructorStatus = await Instructors.findOneAndUpdate(
+            { _id: param.id },
+            [{ $set: { isActive: { $not: "$isActive" } } }],
+            { new: true }
+        );
+        if (updatedInstructorStatus) {
+            return updatedInstructorStatus;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        throw new Error('Could not delete course. Please try again later.');
+    }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Manages update Instructor status operations
+ *
+ * @param  {Object} param 
+ *
+ * @returns Object|null
+ */
+async function updateCourseStatus(param) {
+    try {
+        // console.log('deleteInstructor---',param)
+        //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
+        const updatedCourseStatus = await Courses.findOneAndUpdate(
+            { _id: param.id },
+            [{ $set: { isActive: { $not: "$isActive" } } }],
+            { new: true }
+        );
+        if (updatedCourseStatus) {
+            return updatedCourseStatus;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        throw new Error('Could not delete course. Please try again later.');
+    }
+}
+
 /*****************************************************************************************/
 /*****************************************************************************************/
