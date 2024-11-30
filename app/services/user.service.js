@@ -56,11 +56,12 @@ module.exports = {
   saveOrderDetails,
   saveTopayOrderDetails,
   getOrderDetails,
-  getAllOrderDetails,
+
 
   //payment
   savePaymentDetails,
   saveToPayPaymentDetails,
+  // paymentMethodRetrive,
 };
 
 /*****************************************************************************************/
@@ -274,7 +275,8 @@ async function checkoutSession(req) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
-  const { paymentIntent, amount, email, name } = param.body;
+  const { paymentIntent, amount, email, name, courses_data } = param.body;
+  console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -290,12 +292,13 @@ async function sendPaymentEmail(param) {
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
         <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
-        
+
         <p>We are pleased to inform you that your payment has been successfully processed.</p>
 
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Payment Intent ID:</strong> ${paymentIntent}</p>
+          <p><strong>Payment ID:</strong> ${paymentIntent}</p>
+          <p><strong>Payment ID:</strong> ${courses_data.course_title}</p>
           <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
         </div>
@@ -303,7 +306,7 @@ async function sendPaymentEmail(param) {
         <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
 
         <p style="font-style: italic;">Thank you for choosing our service!</p>
-        
+
         <p>Best regards,<br>The Booking App Live Team</p>
       </div>
 
@@ -344,11 +347,8 @@ async function saveOrderDetails(param) {
       email: param.formvalues.email,
       phoneNumber: param.formvalues.phoneNumber,
       acknowledge: param.formvalues.acknowledge,
-      // cardNumber: param.formvalues.cardNumber,
-      // expiryDate: param.formvalues.expiryDate,
-      // cvv: param.formvalues.cvv,
       paymentIntentID: param.paymentIntent.id,
-      amount: param.paymentIntent.amount,
+      amount: (param.paymentIntent.amount / 100).toFixed(2),
       courses: param.coursesData
     })
     const orderdata = await orders.save();
@@ -367,6 +367,8 @@ async function saveOrderDetails(param) {
 /*****************************************************************************************/
 async function sendWellcomeEmail(param) {
   const { email, firstName } = param.body.formvalues;
+  const courses_data = param.body.courses_data;
+  console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -382,13 +384,13 @@ async function sendWellcomeEmail(param) {
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
         <h2 style="color: #333;">Hello, ${firstName}!</h2>
-        
+
         <p>We are thrilled to have you on board. Thank you for joining Booking App Live!</p>
 
         <p>Our platform offers a wide range of features to help you manage your bookings efficiently. If you have any questions or need assistance, feel free to reach out to our support team.</p>
 
         <p style="font-style: italic;">We look forward to serving you!</p>
-        
+
         <p>Best regards,<br>The Booking App Live Team</p>
       </div>
 
@@ -416,6 +418,9 @@ async function sendWellcomeEmail(param) {
 async function sendEmailToAdmin(param) {
   const { email, firstName } = param.body.formvalues;
   const { paymentIntent } = param.body.paymentIntent;
+  const { courses_data } = param.body.courses_data;
+
+  console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -431,7 +436,7 @@ async function sendEmailToAdmin(param) {
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
         <h2 style="color: #333;">Hello Admin,</h2>
-        
+
         <p>We are excited to inform you that a new Student has Enrolled in Booking App Live!</p>
 
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
@@ -443,7 +448,7 @@ async function sendEmailToAdmin(param) {
         <p>Please ensure to welcome them and provide any necessary support.</p>
 
         <p style="font-style: italic;">Thank you for your continued support!</p>
-        
+
         <p>Best regards,<br>The Booking App Live Team</p>
       </div>
 
@@ -488,17 +493,6 @@ async function getOrderDetails(id) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-async function getAllOrderDetails() {
-  try {
-    const order = await Orders.find().select();
-    return order ? order : false;
-  } catch (error) {
-    console.error('Error fetching order details:', error);
-    throw new Error('Could not fetch order details. Please try again later.');
-  }
-}
-/*****************************************************************************************/
-/*****************************************************************************************/
 async function savePaymentDetails(param) {
   try {
     const orders = new Payments({
@@ -507,13 +501,10 @@ async function savePaymentDetails(param) {
       lastName: param.studentRegisterResponse.data.last_name,
       email: param.studentRegisterResponse.data.email,
       phoneNumber: param.studentRegisterResponse.data.phone,
-
       paymentIntentID: param.paymentIntent.id,
       paymentStatus: param.paymentIntent.status,
-      amount: param.paymentIntent.amount,
-
+      amount: (param.paymentIntent.amount / 100).toFixed(2),
       orderId: param.orderDetails.id,
-
       courses: param.coursesData
     })
     const orderdata = await orders.save();
@@ -548,7 +539,7 @@ async function saveTopayOrderDetails(param) {
       toPay: param.toPay,
       futurePay: param.futurePay,
       paymentIntentID: param.paymentIntent.id,
-      amount: param.paymentIntent.amount,
+      amount: (param.paymentIntent.amount / 100).toFixed(2),
       courses: param.coursesData
     })
     const orderdata = await orders.save();
@@ -575,7 +566,7 @@ async function saveToPayPaymentDetails(param) {
 
       paymentIntentID: param.paymentIntent.id,
       paymentStatus: param.paymentIntent.status,
-      amount: param.paymentIntent.amount,
+      amount: (param.paymentIntent.amount / 100).toFixed(2),
       toPay: param.toPay,
       futurePay: param.futurePay,
       orderId: param.orderDetails.id,
@@ -595,61 +586,9 @@ async function saveToPayPaymentDetails(param) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-// async function sendEmailToPayStudent(param) {
-//   const { paymentIntent, amount, email, name, toPay, futurePay } = param.body;
-
-//   const mailOptions = {
-//     from: `"Booking App Live" <${config.mail_from_email}>`,
-//     to: email,
-//     subject: "Payment Confirmation - Booking App Live",
-//     html: `
-//      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-//       <!-- Header -->
-//       <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-//         <h1 style="color: white; margin: 0;">Payment Confirmation</h1>
-//       </div>
-
-//       <!-- Body -->
-//       <div style="padding: 20px; background-color: #f9f9f9;">
-//         <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
-
-//         <p>We are pleased to inform you that your payment has been successfully processed.</p>
-
-//         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-//           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-//           <p><strong>Payment Intent ID:</strong> ${paymentIntent}</p>
-//           <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
-//           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-//         </div>
-
-//         <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
-
-//         <p style="font-style: italic;">Thank you for choosing our service!</p>
-
-//         <p>Best regards,<br>The Booking App Live Team</p>
-//       </div>
-
-//       <!-- Footer -->
-//       <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-//         <p style="color: white; margin: 0; font-size: 12px;">
-//           &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-//         </p>
-//       </div>
-//     </div>
-//     `
-//   };
-
-//   try {
-//     const emailResult = await SendEmail(mailOptions);
-//     return { success: true, message: "Payment confirmation email sent successfully" };
-//   } catch (error) {
-//     console.error("Error sending payment confirmation email:", error);
-//     return { success: false, message: "Failed to send payment confirmation email" };
-//   }
-// }
-
 async function sendEmailToPayStudent(param) {
-  const { paymentIntent, amount, email, name, toPay, futurePay } = param.body;
+  const { paymentIntent, amount, email, name, toPay, futurePay, courses_data } = param.body;
+  console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -665,7 +604,7 @@ async function sendEmailToPayStudent(param) {
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
         <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
-        
+
         <p>We are pleased to inform you that your payment has been successfully processed.</p>
 
         <!-- Payment Details -->
@@ -689,7 +628,7 @@ async function sendEmailToPayStudent(param) {
         <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
 
         <p style="font-style: italic;">Thank you for choosing our service!</p>
-        
+
         <p>Best regards,<br>The Booking App Live Team</p>
       </div>
 
@@ -715,11 +654,12 @@ async function sendEmailToPayStudent(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToPayAdmin(param) {
-  const { email, firstName} = param.body.formvalues;
-  const { toPay} = param.body.toPay;
-  const {futurePay } = param.body.toPay;
+  const { email, firstName } = param.body.formvalues;
+  const { toPay } = param.body.toPay;
+  const { futurePay } = param.body.toPay;
   const { paymentIntent } = param.body.paymentIntent;
- 
+  const { courses_data } = param.body.courses_data;
+  console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -735,7 +675,7 @@ async function sendEmailToPayAdmin(param) {
       <!-- Body -->
       <div style="padding: 20px; background-color: #f9f9f9;">
         <h2 style="color: #333;">Hello Admin,</h2>
-        
+
         <p>We are excited to inform you that a new student has enrolled in Booking App Live!</p>
 
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
@@ -757,7 +697,7 @@ async function sendEmailToPayAdmin(param) {
         </div>
 
         <p style="font-style: italic;">Thank you for your continued support!</p>
-        
+
         <p>Best regards,<br>The Booking App Live Team</p>
       </div>
 
@@ -781,3 +721,19 @@ async function sendEmailToPayAdmin(param) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+
+// async function paymentMethodRetrive(req) {
+//   const { payment_method } = req.body.param; // Extract payment method ID from request
+//   console.log("req.body.paramreq.body.paramreq.body.param",req.body.param)
+//   // try {
+//   //     // Retrieve payment method details from Stripe
+//   //     const paymentMethod = await stripe.paymentMethods.retrieve(payment_method);
+//   //     console.log('Payment Method Details:', paymentMethod);
+
+//   //     // Return the details
+//   //     return paymentMethod ? paymentMethod : false;
+//   //     } catch (error) {
+//   //     console.error('Error fetching payment method details:', error);
+//   //     throw new Error('Could not fetch payment method details. Please try again later.');
+//   // }
+// }

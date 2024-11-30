@@ -23,6 +23,7 @@ const {
     Categories,
     Instructors,
     Orders,
+    Payments,
 } = require("../helpers/db");
 
 module.exports = {
@@ -42,7 +43,10 @@ module.exports = {
     deleteInstructor,
     updateInstructor,
     updateInstructorStatus,
-    updateCourseStatus
+    updateCourseStatus,
+    getAllPaymentDetails,
+    getAllOrderDetails,
+    getAllUsers,
 };
 
 /*****************************************************************************************/
@@ -107,6 +111,7 @@ async function addCourse(param) {
             //availability: param.availability,
             course_time: param.course_time,
             course_schedule_dates: param.courseScheduleDates,
+            zoom_links: param.zoomLinks,
             course_image: param.course_image,
             instructor: param.instructorId,
             course_format: param.course_format,
@@ -253,6 +258,7 @@ async function updateCourse(param) {
                     sale_price: param.sale_price,
                     vat: param.vat,
                     course_schedule_dates: param.course_schedule_dates,
+                    zoom_links: param.zoom_links,
                     course_time: param.course_time,
                     course_image: param.course_image,
                     course_format: param.course_format,
@@ -515,7 +521,7 @@ async function updateInstructor(param) {
  */
 async function sendEmailToInstructor(instructorData) {
     console.log('instructorData----send email---', instructorData)
-    const { email, first_name, _id} = instructorData;
+    const { email, first_name, _id } = instructorData;
     const scheduleSetupUrl = `${config.instructor_url}?id=${_id}&name=${first_name}`;
     const mailOptions = {
         from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -658,3 +664,32 @@ async function updateCourseStatus(param) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function getAllPaymentDetails() {
+    try {
+        const payments = await Payments.find().select().sort({ createdAt: "desc" });
+        return payments ? payments : false;
+    } catch (error) {
+        console.error('Error fetching payments details:', error);
+        throw new Error('Could not fetch payments details. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function getAllOrderDetails() {
+    try {
+        const order = await Orders.find().select();
+        return order ? order : false;
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        throw new Error('Could not fetch order details. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+async function getAllUsers() {
+    const result = await User.find().select().sort({ createdAt: 'desc' });
+
+    if (result && result.length > 0) return result;
+
+    return false;
+}

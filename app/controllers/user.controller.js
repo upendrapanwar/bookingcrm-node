@@ -10,9 +10,9 @@ const stripe = require("stripe")(config.stripe_secret_key);
 //const multer = require('multer');
 
 router.post('/signin', authenticate);
-router.post('/signup', register);   
-router.post('/studentRegister', studentRegister);   
-router.get('/get-all-users', getAllUsers);  
+router.post('/signup', register);
+router.post('/studentRegister', studentRegister);
+router.get('/get-all-users', getAllUsers);
 router.get('/get-all-courses', getAllCourses);
 
 //stripe
@@ -22,10 +22,6 @@ router.post("/checkoutSession", checkoutSession);
 router.post("/save-order-details", saveOrderDetails);
 router.post("/save-topay-order-details", saveTopayOrderDetails);
 router.get("/get-order-details", getOrderDetails);
-router.get("/get-all-order-details", getAllOrderDetails);
-
-
-
 
 //node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
@@ -34,11 +30,11 @@ router.post("/send-student-enrolled-email", sendEmailToAdmin);
 router.post("/send-topay-payment-email", sendEmailToPayStudent);
 router.post("/send-topay-student-enrolled-email", sendEmailToPayAdmin);
 
-
-
 //payment
 router.post("/save-payment-details", savePaymentDetails);
 router.post("/save-topay-payment-details", saveToPayPaymentDetails);
+// router.post("/get-payment-method/:id", paymentMethodRetrive);
+
 
 
 
@@ -138,7 +134,7 @@ function authenticate(req, res, next) {
     .authenticate(req.body)
     .then((user) =>
       user
-        ?(user) || (user && user.isActive == true)
+        ? (user) || (user && user.isActive == true)
           ? res.json({
             status: true,
             message: msg.user.login.success,
@@ -214,10 +210,10 @@ function sendPaymentEmail(req, res, next) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 function saveOrderDetails(req, res, next) {
-    userService.saveOrderDetails(req.body)
-      .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
-      .catch((err) => next(res.status(400).json({ status: false, message: err })));
-  }
+  userService.saveOrderDetails(req.body)
+    .then((data) => data ? res.status(201).json({ status: true, data: data }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: {} }))
+    .catch((err) => next(res.status(400).json({ status: false, message: err })));
+}
 /*****************************************************************************************/
 /*****************************************************************************************/
 function sendWellcomeEmail(req, res, next) {
@@ -255,13 +251,6 @@ function sendEmailToAdmin(req, res, next) {
 */
 function getOrderDetails(req, res, next) {
   userService.getOrderDetails(req.query.id)
-    .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
-    .catch(err => next(res.json({ status: false, message: err })));
-}
-/*****************************************************************************************/
-/*****************************************************************************************/
-function getAllOrderDetails(req, res, next) {
-  userService.getAllOrderDetails(req)
     .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
     .catch(err => next(res.json({ status: false, message: err })));
 }
@@ -310,5 +299,12 @@ function sendEmailToPayAdmin(req, res, next) {
       next(res.json({ status: false, message: err.message }));
     });
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+// function paymentMethodRetrive(req, res, next) {
+//   userService.paymentMethodRetrive(req)
+//     .then(data => data ? res.status(200).json({ status: true, data: data }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
+//     .catch(err => next(res.json({ status: false, message: err })));
+// }
 /*****************************************************************************************/
 /*****************************************************************************************/

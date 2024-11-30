@@ -6,10 +6,10 @@ const msg = require('../helpers/messages.json');
 
 //const multer = require('multer');
 
-router.post('/signin',authenticate);
+router.post('/signin', authenticate);
 router.post('/add_course', addCourse);
 router.get('/get_course', getCourse);
-router.post('/add_category',addCategory);
+router.post('/add_category', addCategory);
 router.get('/getAllcategories', getAllcategories);
 router.get('/get_course_byId/:id', getCourseById);
 router.put('/update_course', updateCourse);
@@ -18,11 +18,14 @@ router.get('/getcategory/:id', getcategoryById);
 router.put('/edit_category/:id', editCategory);
 router.post('/add_instructor', addInstructor);
 router.get('/get_instructors', getInstructors);
-router.get('/get_instructor_byId/:id',getInstructorById);
-router.put('/update_status_instructor',updateInstructorStatus)
-router.put('/delete_instructor',deleteInstructor);
-router.put('/update_instructor',updateInstructor);
-router.put('/update_course_status',updateCourseStatus);
+router.get('/get_instructor_byId/:id', getInstructorById);
+router.put('/update_status_instructor', updateInstructorStatus)
+router.put('/delete_instructor', deleteInstructor);
+router.put('/update_instructor', updateInstructor);
+router.put('/update_course_status', updateCourseStatus);
+router.get("/get-payment-details", getAllPaymentDetails)
+router.get("/get-all-order-details", getAllOrderDetails);
+router.get('/get-all-users', getAllUsers);  
 
 
 module.exports = router;
@@ -172,7 +175,7 @@ function getCourseById(req, res, next) {
  * @return JSON|null
  */
 function updateCourse(req, res, next) {
-  //  console.log('req.body--',req.body)
+    //  console.log('req.body--',req.body)
     adminService
         .updateCourse(req.body)
         .then((coursedata) =>
@@ -340,7 +343,7 @@ function editCategory(req, res, next) {
     adminService
         .editCategory(req)
         .then((result) =>
-            result 
+            result
                 ? res.status(201).json({
                     status: true,
                     message: msg.admin.get_categories.success,
@@ -499,7 +502,7 @@ function deleteInstructor(req, res, next) {
  * @return JSON|null
  */
 function updateInstructor(req, res, next) {
-   // console.log('req.body--',req.body)
+    // console.log('req.body--',req.body)
     adminService
         .updateInstructor(req.body)
         .then((coursedata) =>
@@ -583,6 +586,27 @@ function updateCourseStatus(req, res, next) {
         .catch((err) =>
             next(res.status(400).json({ status: false, message: err }))
         );
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function getAllPaymentDetails(req, res, next) {
+    adminService.getAllPaymentDetails(req)
+        .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
+        .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function getAllOrderDetails(req, res, next) {
+    adminService.getAllOrderDetails(req)
+        .then(allOrders => allOrders ? res.status(200).json({ status: true, data: allOrders }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
+        .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function getAllUsers(req, res, next) {
+    adminService.getAllUsers(req.params)
+      .then(allUsers => allUsers ? res.status(200).json({ status: true, data: allUsers }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
