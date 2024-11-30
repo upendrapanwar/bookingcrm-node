@@ -47,6 +47,7 @@ module.exports = {
 
   //nodeMailer 
   sendPaymentEmail,
+ 
   sendWellcomeEmail,
   sendEmailToAdmin,
   sendEmailToPayStudent,
@@ -276,7 +277,7 @@ async function checkoutSession(req) {
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
   const { paymentIntent, amount, email, name, courses_data } = param.body;
-  console.log("courses_data", courses_data);
+  console.log("courses_data####", courses_data[0].course_title);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -298,8 +299,53 @@ async function sendPaymentEmail(param) {
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
           <p><strong>Payment ID:</strong> ${paymentIntent}</p>
-          <p><strong>Payment ID:</strong> ${courses_data.course_title}</p>
+          <p><strong>Course Title:</strong> ${courses_data[0].course_title}</p>
           <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
+          <p><strong>Instructor Name:</strong> Instructor test</p>
+          <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1A"</p>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+          
+        </div>
+
+        <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
+
+        <p style="font-style: italic;">Thank you for choosing our service!</p>
+
+        <p>Best regards,<br>The Booking App Live Team</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+        <p style="color: white; margin: 0; font-size: 12px;">
+          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+        </p>
+      </div>
+    </div>
+    `
+  };
+  
+  const mailOptionsInstrutor = {
+    from: `"Booking App Live" <${config.mail_from_email}>`,
+    to: 'instructors@mailinator.com',
+    subject: "Booking Confirmation - Booking App Live",
+    html: `
+     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+      <!-- Header -->
+      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Booking Confirmation</h1>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; background-color: #f9f9f9;">
+        <h2 style="color: #333;">Hi, Instructor test!</h2>
+
+        <p>We are pleased to inform you that booking has been successfully processed.</p>
+
+        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #333;">Booking Details:</h3>
+          
+          <p><strong>Course Title:</strong> ${courses_data[0].course_title}</p>
+        <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1A"</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
         </div>
 
@@ -319,9 +365,9 @@ async function sendPaymentEmail(param) {
     </div>
     `
   };
-
   try {
     const emailResult = await SendEmail(mailOptions);
+    await SendEmail(mailOptionsInstrutor);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
     console.error("Error sending payment confirmation email:", error);
@@ -330,6 +376,7 @@ async function sendPaymentEmail(param) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+
 async function saveOrderDetails(param) {
   //  console.log('saveOrderDetails', param);
   try {

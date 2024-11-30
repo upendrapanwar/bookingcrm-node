@@ -25,6 +25,7 @@ router.get("/get-order-details", getOrderDetails);
 
 //node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
+
 router.post("/send-wellcome-email", sendWellcomeEmail);
 router.post("/send-student-enrolled-email", sendEmailToAdmin);
 router.post("/send-topay-payment-email", sendEmailToPayStudent);
@@ -207,6 +208,8 @@ function sendPaymentEmail(req, res, next) {
       next(res.json({ status: false, message: err.message }));
     });
 }
+
+
 /*****************************************************************************************/
 /*****************************************************************************************/
 function saveOrderDetails(req, res, next) {
@@ -283,7 +286,7 @@ function sendEmailToPayStudent(req, res, next) {
       return result ? res.json({ status: true, message: "Payment email sent successfully." }) : res.json({ status: false, message: "Error in sending payment email." });
     })
     .catch((err) => {
-      console.error('Error in sendPaymentEmail controller:', err);
+      console.error('Error in sendEmailToPayStudent controller:', err);
       next(res.json({ status: false, message: err.message }));
     });
 }
