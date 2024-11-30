@@ -278,6 +278,9 @@ async function checkoutSession(req) {
 async function sendPaymentEmail(param) {
   const { paymentIntent, amount, email, name, courses_data } = param.body;
   console.log("courses_data####", courses_data[0].course_title);
+  const courseTitlesHtml = courses_data
+  .map((course, index) => `<p>${index + 1}.${course.course_title}</p>`)
+  .join('');
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -299,7 +302,8 @@ async function sendPaymentEmail(param) {
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
           <p><strong>Payment ID:</strong> ${paymentIntent}</p>
-          <p><strong>Course Title:</strong> ${courses_data[0].course_title}</p>
+          
+        <p><strong>Course Title:</strong>${courseTitlesHtml}</p>
           <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
           <p><strong>Instructor Name:</strong> Instructor test</p>
           <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1A"</p>
@@ -343,8 +347,8 @@ async function sendPaymentEmail(param) {
 
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Booking Details:</h3>
-          
-          <p><strong>Course Title:</strong> ${courses_data[0].course_title}</p>
+        
+        <p><strong>Course Title:</strong>${courseTitlesHtml}</p>
         <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1A"</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
         </div>
