@@ -63,7 +63,7 @@ app.use((req, res, next) => {
 // app.use("/community", require("./app/controllers/community.controller"));
 app.use("/admin", require("./app/controllers/admin.controller"));
 app.use("/user", require("./app/controllers/user.controller.js"));
-// app.use("/seller", require("./app/controllers/seller.controller"));
+app.use("/instructor", require("./app/controllers/instructor.controller"));
 app.use(
   "/" + config.uploadDir,
   express.static(__dirname + "/" + config.uploadDir)
