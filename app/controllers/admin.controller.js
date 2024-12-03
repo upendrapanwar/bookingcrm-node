@@ -25,7 +25,8 @@ router.put('/update_instructor', updateInstructor);
 router.put('/update_course_status', updateCourseStatus);
 router.get("/get-payment-details", getAllPaymentDetails)
 router.get("/get-all-order-details", getAllOrderDetails);
-router.get('/get-all-users', getAllUsers);  
+router.get('/get-all-users', getAllUsers);
+  
 
 
 module.exports = router;

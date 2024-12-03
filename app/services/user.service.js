@@ -47,7 +47,7 @@ module.exports = {
 
   //nodeMailer 
   sendPaymentEmail,
- 
+
   sendWellcomeEmail,
   sendEmailToAdmin,
   sendEmailToPayStudent,
@@ -62,7 +62,8 @@ module.exports = {
   //payment
   savePaymentDetails,
   saveToPayPaymentDetails,
-  // paymentMethodRetrive,
+
+  getCourseZoomLink,
 };
 
 /*****************************************************************************************/
@@ -276,15 +277,15 @@ async function checkoutSession(req) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
-  const { paymentIntent, amount, email, name, courses_data } = param.body;
+  const { paymentIntent, amount, email, name, courses_data, classLink } = param.body;
   console.log("courses_data####", courses_data[0].course_title);
   const courseTitlesHtml = courses_data
-  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-  .join(' ');
-  // const courseTitlesHtml = courses_data
-  // .map((course, index) => `${index + 1}. ${course.course_title}`) // Adding numbering
-  // .join('<br>');
+    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+    .join(' ');
 
+  const zoomLinks = classLink.map((course, index) =>
+    `<p style="margin-left:75px;">${index + 1}. ${course.zoom_links}</p>`
+  );
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -310,9 +311,8 @@ async function sendPaymentEmail(param) {
         <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
           <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
           <p><strong>Instructor Name:</strong> Instructor test</p>
-          <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1"</p>
+          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-          
         </div>
 
         <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
@@ -331,7 +331,7 @@ async function sendPaymentEmail(param) {
     </div>
     `
   };
-  
+
   const mailOptionsInstrutor = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
     to: 'instructors@mailinator.com',
@@ -473,9 +473,18 @@ async function sendWellcomeEmail(param) {
 async function sendEmailToAdmin(param) {
   const { email, firstName } = param.body.formvalues;
   const { paymentIntent } = param.body.paymentIntent;
-  const { courses_data } = param.body.courses_data;
+  const { classLink } = param.body;
 
-  console.log("courses_data", courses_data);
+  console.log("classLink", classLink);
+
+  const zoomLinks = classLink.map((course, index) =>
+    `<p style="margin-left:75px;">
+      ${course.zoom_links}
+    </p>`
+    `<p style="margin-left:75px;">
+        <strong>${course.course_title}</strong>
+    </p>`
+  );
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -498,6 +507,7 @@ async function sendEmailToAdmin(param) {
           <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
           <p><strong>Name:</strong> ${firstName}</p>
           <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Zoom link:</strong> ${zoomLinks}</p>
         </div>
 
         <p>Please ensure to welcome them and provide any necessary support.</p>
@@ -519,7 +529,7 @@ async function sendEmailToAdmin(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    return { success: true, message: "Student enrolled email to admin sent successfully" };
+    return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
   } catch (error) {
     console.error("Error sending student enrolled email to admin:", error);
     return { success: false, message: "Failed to send student enrolled email to admin" };
@@ -642,8 +652,14 @@ async function saveToPayPaymentDetails(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToPayStudent(param) {
-  const { paymentIntent, amount, email, name, toPay, futurePay, courses_data } = param.body;
-  console.log("courses_data", courses_data);
+  const { paymentIntent, amount, email, name, toPay, futurePay, courses_data, classLink } = param.body;
+  const courseTitlesHtml = courses_data
+    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+    .join(' ');
+
+  const zoomLinks = classLink.map((course, index) =>
+    `<p style="margin-left:75px;">${index + 1}. ${course.zoom_links}</p>`
+  );
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -666,8 +682,10 @@ async function sendEmailToPayStudent(param) {
         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
           <p><strong>Payment Intent ID:</strong> ${paymentIntent}</p>
+           <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
           <p><strong>Amount Paid:</strong> £${(toPay || 0).toFixed(2)}</p>
           <p><strong>Remaining Amount:</strong> £${(futurePay || 0).toFixed(2)}</p>
+          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
           <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
         </div>
 
@@ -713,8 +731,8 @@ async function sendEmailToPayAdmin(param) {
   const { toPay } = param.body.toPay;
   const { futurePay } = param.body.toPay;
   const { paymentIntent } = param.body.paymentIntent;
-  const { courses_data } = param.body.courses_data;
-  console.log("courses_data", courses_data);
+  // const { courses_data } = param.body.courses_data;
+  // console.log("courses_data", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -768,7 +786,7 @@ async function sendEmailToPayAdmin(param) {
 
   try {
     const emailResult = await SendEmail(mailOptions);
-    return { success: true, message: "Student enrolled email to admin sent successfully" };
+    return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
   } catch (error) {
     console.error("Error sending student enrolled email to admin:", error);
     return { success: false, message: "Failed to send student enrolled email to admin" };
@@ -776,19 +794,23 @@ async function sendEmailToPayAdmin(param) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+async function getCourseZoomLink(req) {
+  const courseIds = JSON.parse(req.query.courseIds);
+  console.log("Checking courseIds", courseIds);
+  try {
 
-// async function paymentMethodRetrive(req) {
-//   const { payment_method } = req.body.param; // Extract payment method ID from request
-//   console.log("req.body.paramreq.body.paramreq.body.param",req.body.param)
-//   // try {
-//   //     // Retrieve payment method details from Stripe
-//   //     const paymentMethod = await stripe.paymentMethods.retrieve(payment_method);
-//   //     console.log('Payment Method Details:', paymentMethod);
+    const courses = await Courses.find({ _id: { $in: courseIds } });
+    console.log("Found courses:", courses);
 
-//   //     // Return the details
-//   //     return paymentMethod ? paymentMethod : false;
-//   //     } catch (error) {
-//   //     console.error('Error fetching payment method details:', error);
-//   //     throw new Error('Could not fetch payment method details. Please try again later.');
-//   // }
-// }
+    if (!courses || courses.length === 0) {
+      return false;
+    }
+
+    return courses;
+  } catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+};
+/*****************************************************************************************/
+/*****************************************************************************************/
