@@ -294,20 +294,12 @@ async function updateCourse(param) {
  */
 async function deleteCourse(param) {
     try {
-        //const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
-        const deletedCourse = await Courses.findOneAndUpdate(
-            { _id: param.id },
-            {
-                $set: {
-                    isActive: false,
-                },
-            },
-            { new: true }
-        );
+        const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
+    
         if (deletedCourse) {
-            return deletedCourse;
+            return deletedCourse; // Return the deleted document if found and deleted
         } else {
-            return false;
+            return false; // Return false if no document was found
         }
     } catch (error) {
         console.error('Error deleting course:', error);
