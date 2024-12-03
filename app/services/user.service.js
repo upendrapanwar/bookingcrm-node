@@ -278,7 +278,6 @@ async function checkoutSession(req) {
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
   const { paymentIntent, amount, email, name, courses_data, classLink } = param.body;
-  console.log("courses_data####", courses_data[0].course_title);
   const courseTitlesHtml = courses_data
     .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
     .join(' ');
@@ -386,7 +385,7 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 
 async function saveOrderDetails(param) {
-  //  console.log('saveOrderDetails', param);
+   // console.log('saveOrderDetails', param);
   try {
     const orders = new Orders({
 
@@ -423,7 +422,7 @@ async function saveOrderDetails(param) {
 async function sendWellcomeEmail(param) {
   const { email, firstName } = param.body.formvalues;
   const courses_data = param.body.courses_data;
-  console.log("courses_data", courses_data);
+ // console.log("courses_data--wellcome", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -471,20 +470,21 @@ async function sendWellcomeEmail(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToAdmin(param) {
+  console.log("courses_data for admin ---", param.body);
   const { email, firstName } = param.body.formvalues;
-  const { paymentIntent } = param.body.paymentIntent;
+  const  paymentIntent = param.body.paymentIntent;
   const { classLink } = param.body;
-
-  console.log("classLink", classLink);
+  const courses_data = param.body.courses_data || [];
+  const orderDetails = param.body.orderDetails;
 
   const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;">
-      ${course.zoom_links}
-    </p>`
-    `<p style="margin-left:75px;">
-        <strong>${course.course_title}</strong>
-    </p>`
+    `<p style="margin-left:75px;"> ${index+1}.${course.zoom_links}</p>`
   );
+ 
+  const courseTitlesHtml = courses_data
+  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+  .join(' ');
+
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -507,7 +507,13 @@ async function sendEmailToAdmin(param) {
           <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
           <p><strong>Name:</strong> ${firstName}</p>
           <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Zoom link:</strong> ${zoomLinks}</p>
+          <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
+          <p><strong>Order Id:</strong> ${orderDetails.id}</p>
+          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
+          <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
+          <p><strong>Amount:</strong> ${(paymentIntent.amount / 100).toFixed(2)}</p>
+          <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
+          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
         </div>
 
         <p>Please ensure to welcome them and provide any necessary support.</p>
@@ -559,6 +565,7 @@ async function getOrderDetails(id) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function savePaymentDetails(param) {
+ // console.log('savePaymentDetails----param',param)
   try {
     const orders = new Payments({
       userId: param.studentRegisterResponse.data.id,
@@ -728,11 +735,24 @@ async function sendEmailToPayStudent(param) {
 /*****************************************************************************************/
 async function sendEmailToPayAdmin(param) {
   const { email, firstName } = param.body.formvalues;
-  const { toPay } = param.body.toPay;
-  const { futurePay } = param.body.toPay;
-  const { paymentIntent } = param.body.paymentIntent;
-  // const { courses_data } = param.body.courses_data;
-  // console.log("courses_data", courses_data);
+  const toPay = param.body.toPay;
+  const futurePay = param.body.futurePay;
+  const paymentIntent = param.body.paymentIntent;
+  const courses_data = param.body.courses_data || [];
+  const orderDetails = param.body.orderDetails;
+  const { classLink } = param.body;
+
+  const zoomLinks = classLink.map((course, index) =>
+    `<p style="margin-left:75px;">
+      ${index + 1}.${course.zoom_links}
+    </p>`
+  );
+
+
+  const courseTitlesHtml = courses_data
+  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+  .join(' ');
+ 
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -755,8 +775,14 @@ async function sendEmailToPayAdmin(param) {
           <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
           <p><strong>Name:</strong> ${firstName}</p>
           <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Amount Paid:</strong> £${toPay}</p>
+          <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
+          <p><strong>Order Id:</strong> ${orderDetails.id}</p>
+          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
+          <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
+          <p><strong>Amount Paid:</strong> £${toPay.toFixed(2)}</p>
           <p><strong>Remaining Amount:</strong> £${futurePay.toFixed(2)}</p>
+          <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
+          <p><strong>ZoomLinks:</strong> <br> ${zoomLinks}</p>         
         </div>
 
         <p>Please ensure to welcome them and provide any necessary support.</p>
