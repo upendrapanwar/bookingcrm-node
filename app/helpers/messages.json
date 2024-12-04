@@ -1,0 +1,98 @@
+{
+    "common": {
+        "400_error": "Bad Request.",
+        "no_user_err": "User not found.",
+        "no_data_err": "Data not found.",
+        "invalid": "Invalid inputs",
+        "success": "Signup successfully.",
+        "error": "Signup failed."
+    },
+    "user": {
+        "signup": {
+            "success": "Signup successfully.",
+            "error": "Signup failed."
+        },
+        "ambessador": {
+            "success": "Submitted successfully.",
+            "error": "Error while saving."
+        },
+        "login": {
+            "success": "Login successfully.",
+            "error": "Invalid login credentials.",
+            "active": "User not activated."
+        },
+        "password": {
+            "verif_link": "Verification link sent successfully, please check your email inbox.",
+            "verif_link_err": "Verification link is not valid.",
+            "email_exist": "Email is not registered with us.",
+            "reset_success": "Password reset successfully.",
+            "update_success": "Password updated successfully.",
+            "confirm_pass_err": "Confirm password not matched.",
+            "old_pass_err": "Old password not matched"
+        },
+        "profile": {
+            "update_success": "Profile updated successfully."
+        },
+        "forgot_password": {
+            "success": "Data retrieved successfully.",
+            "error": "Data not found."
+        }
+    },
+
+    "admin": {
+        "add_course": {
+            "success": "Course added successfully.",
+            "error": "Failed to add course."
+        },
+        "get_course": {
+            "success": "Courses get successfully.",
+            "error": "Failed to get courses."
+        },
+        "add_category" : {
+             "success": "Category added successfully.",
+            "error": "Failed to add Category."
+        },
+        "get_categories": {
+            "success": "Categories get successfully.",
+            "error": "Failed to get categories."
+        },
+        "update_course": {
+            "success": "Course updated successfully.",
+            "error": "Failed to update course."
+        },
+        "delete_course": {
+            "success": "Courses deleted successfully.",
+            "error": "Failed to delete courses."
+        },
+        "add_instructor": {
+            "success": "Instructor added successfully.",
+            "error": "Failed to add instructor."
+        },
+        "get_instructors": {
+            "success": "Instructors get successfully.",
+            "error": "Failed to get instructors."
+        },
+        "delete_instructor": {
+            "success": "Instructor deleted successfully.",
+            "error": "Failed to delete Instructor."
+        },
+        "update_instructor": {
+            "success": "Instructor updated successfully.",
+            "error": "Failed to update instructor."
+        },
+        "update_instructor_status":{
+            "success": "Instructor status update successfully.",
+            "error": "Failed to update Instructor status."
+        },
+        "update_course_status":{
+            "success": "Course status update successfully.",
+            "error": "Failed to update Course status."
+        }
+    },
+    "instructor":{
+        "submit_schedule":{
+            "success": "Schedule dates send successfully.",
+            "error": "Failed to send schedule dates."
+        }
+    }
+}
