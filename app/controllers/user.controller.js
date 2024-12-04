@@ -25,7 +25,6 @@ router.get("/get-order-details", getOrderDetails);
 
 //node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
-
 router.post("/send-wellcome-email", sendWellcomeEmail);
 router.post("/send-student-enrolled-email", sendEmailToAdmin);
 router.post("/send-topay-payment-email", sendEmailToPayStudent);
@@ -35,6 +34,9 @@ router.post("/send-topay-student-enrolled-email", sendEmailToPayAdmin);
 router.post("/save-payment-details", savePaymentDetails);
 router.post("/save-topay-payment-details", saveToPayPaymentDetails);
 // router.post("/get-payment-method/:id", paymentMethodRetrive);
+
+
+router.get("/get-courses-zoomlink", getCourseZoomLink);
 
 
 
@@ -304,10 +306,10 @@ function sendEmailToPayAdmin(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-// function paymentMethodRetrive(req, res, next) {
-//   userService.paymentMethodRetrive(req)
-//     .then(data => data ? res.status(200).json({ status: true, data: data }) : res.status(400).json({ status: false, message: "Error in getting order details.", data: [] }))
-//     .catch(err => next(res.json({ status: false, message: err })));
-// }
+function getCourseZoomLink(req, res, next) {
+  userService.getCourseZoomLink(req)
+    .then(result => result ? res.status(200).json({ status: true, data: result }) : res.status(400).json({ status: false, message: "Error in getting found data.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
 /*****************************************************************************************/
 /*****************************************************************************************/
