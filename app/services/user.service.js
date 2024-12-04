@@ -47,7 +47,6 @@ module.exports = {
 
   //nodeMailer 
   sendPaymentEmail,
-
   sendWellcomeEmail,
   sendEmailToAdmin,
   sendEmailToPayStudent,
@@ -456,7 +455,6 @@ async function sendPaymentEmail(param) {
     </div>
     `
   };
-
   const mailOptionsInstrutor = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
     to: 'instructors@mailinator.com',
