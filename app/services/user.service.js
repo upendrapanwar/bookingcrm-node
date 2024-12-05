@@ -240,133 +240,114 @@ async function getAllUsers() {
 
 //   return false;
 // }
-//********************************************************* */
 
 // async function getAllCourses(param) {
-//   const currentDate = new Date();
+// console.log('api run--')
+//     const currentDate = new Date();
+//     currentDate.setHours(0, 0, 0, 0); // Normalize to compare only the date part
 
-//   // Get the current month and the next two months
-//   const months = [];
-//   for (let i = 0; i < 3; i++) {
-//     const newDate = new Date(currentDate);
-//     newDate.setMonth(currentDate.getMonth() + i);
-//     newDate.setDate(1); // Set to the first day of the month
-//     months.push(newDate);
-//   }
+//     // Get the current month and the next two months
+//     const months = [];
+//     for (let i = 0; i < 3; i++) {
+//         const newDate = new Date(currentDate);
+//         newDate.setMonth(currentDate.getMonth() + i);
+//         newDate.setDate(1); // Set to the first day of the month
+//         months.push(newDate);
+//     }
 
-//   // Start and end of each month
-//   const monthRanges = months.map(month => ({
-//     startOfMonth: new Date(month.getFullYear(), month.getMonth(), 1),
-//     endOfMonth: new Date(month.getFullYear(), month.getMonth() + 1, 0),
-//   }));
-
-//   // Fetch all courses and all fields
-//   const result = await Courses.find({
-//     isActive: true,
-//     course_schedule_dates: { $gte: currentDate },
-//   }).sort({ createdAt: 'desc' }); // No need for .select() here
-
-//   if (!result || result.length === 0) {
-//     return false;
-//   }
-
-//   // Group courses by month based on the earliest course start date
-//   const coursesGroupedByMonth = {};
-
-//   result.forEach(course => {
-//     // Assuming course.course_schedule_dates is sorted
-//     const earliestDate = new Date(course.course_schedule_dates[0]); // Get the first course date
-
-//     // Check if the course falls into any of the month ranges
-//     monthRanges.forEach((range) => {
-//       if (earliestDate >= range.startOfMonth && earliestDate <= range.endOfMonth) {
-//         const monthKey = `${range.startOfMonth.toLocaleString('default', { month: 'long' })} ${range.startOfMonth.getFullYear()}`;
-
-//         if (!coursesGroupedByMonth[monthKey]) {
-//           coursesGroupedByMonth[monthKey] = [];
-//         }
-//         // Add the entire course data, not just the dates
-//         coursesGroupedByMonth[monthKey].push(course);
-//       }
-//     });
-//   });
-
-//   // Sort the months and return the grouped courses
-//   const orderedCourses = Object.keys(coursesGroupedByMonth)
-//     .sort((a, b) => new Date(a) - new Date(b))
-//     .map(month => ({
-//       month,
-//       courses: coursesGroupedByMonth[month],
+//     // Start and end of each month
+//     const monthRanges = months.map(month => ({
+//         startOfMonth: new Date(month.getFullYear(), month.getMonth(), 1),
+//         endOfMonth: new Date(month.getFullYear(), month.getMonth() + 1, 0),
 //     }));
 
-//   return orderedCourses;
+//     // Fetch courses
+//     const result = await Courses.find({
+//         isActive: true,
+//     }).select().sort({ createdAt: 'desc' });
+
+//     if (!result || result.length === 0) {
+//         return false;
+//     }
+
+//     // Group courses by month based on the earliest valid course start date
+//     const coursesGroupedByMonth = {};
+
+//     result.forEach(course => {
+//         // Check if **any** course date is in the past
+//         const hasFutureDate = course.course_schedule_dates.every(dateString => {
+//             const date = new Date(dateString);
+//             return date >= currentDate; // Include course if all dates are today or in the future
+//         });
+
+//         // If all dates are today or in the future, include this course
+//         if (hasFutureDate) {
+//             // Find the earliest date for grouping by month
+//             const earliestDate = new Date(course.course_schedule_dates[0]);
+
+//             // Check the month ranges for grouping
+//             monthRanges.forEach((range) => {
+//                 if (earliestDate >= range.startOfMonth && earliestDate <= range.endOfMonth) {
+//                     const monthKey = `${range.startOfMonth.toLocaleString('default', { month: 'long' })} ${range.startOfMonth.getFullYear()}`;
+
+//                     if (!coursesGroupedByMonth[monthKey]) {
+//                         coursesGroupedByMonth[monthKey] = [];
+//                     }
+//                     coursesGroupedByMonth[monthKey].push(course);
+//                 }
+//             });
+//         }
+//     });
+
+//     // Sort the months and return the grouped courses
+//     const orderedCourses = Object.keys(coursesGroupedByMonth)
+//         .sort((a, b) => new Date(a) - new Date(b))
+//         .map(month => ({
+//             month,
+//             courses: coursesGroupedByMonth[month],
+//         }));
+
+//     return orderedCourses;
+//     console.log('orderedCourses--',orderedCourses)
 // }
-
-
 
 async function getAllCourses(param) {
   const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
 
-  // Get the current month and the next two months
-  const months = [];
-  for (let i = 0; i < 3; i++) {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + i);
-    newDate.setDate(1); // Set to the first day of the month
-    months.push(newDate);
-  }
-
-  // Start and end of each month
-  const monthRanges = months.map(month => ({
-    startOfMonth: new Date(month.getFullYear(), month.getMonth(), 1),
-    endOfMonth: new Date(month.getFullYear(), month.getMonth() + 1, 0),
-  }));
-
-  // Fetch courses within the next 3 months
+  // Optimized query
   const result = await Courses.find({
-    isActive: true,
-    course_schedule_dates: { $gte: currentDate },
+      isActive: true,
+      course_schedule_dates: { $gte: currentDate } 
   }).select().sort({ createdAt: 'desc' });
 
-  if (!result || result.length === 0) {
-    return false;
+  if (!result.length) {
+      return [];
   }
 
-  // Group courses by month based on the earliest course start date
-  const coursesGroupedByMonth = {};
+  const coursesGroupedByMonth = result.reduce((acc, course) => {
+      const hasPastDate = course.course_schedule_dates.some(dateString => {
+          const date = new Date(dateString);
+          return date < currentDate;
+      });
 
-  result.forEach(course => {
-    // Assuming course.course_schedule_dates is sorted
-    const earliestDate = new Date(course.course_schedule_dates[0]);
-
-    // Check if the course falls into any of the month ranges
-    monthRanges.forEach((range) => {
-      if (earliestDate >= range.startOfMonth && earliestDate <= range.endOfMonth) {
-        const monthKey = `${range.startOfMonth.toLocaleString('default', { month: 'long' })} ${range.startOfMonth.getFullYear()}`;
-
-        if (!coursesGroupedByMonth[monthKey]) {
-          coursesGroupedByMonth[monthKey] = [];
-        }
-        coursesGroupedByMonth[monthKey].push(course);
+      if (!hasPastDate) {
+          const earliestDate = new Date(course.course_schedule_dates[0]);
+          const monthKey = `${earliestDate.toLocaleString('default', { month: 'long' })} ${earliestDate.getFullYear()}`;
+          
+          if (!acc[monthKey]) acc[monthKey] = [];
+          acc[monthKey].push(course);
       }
-    });
-  });
 
-  // Sort the months and return the grouped courses
-  const orderedCourses = Object.keys(coursesGroupedByMonth)
-    .sort((a, b) => new Date(a) - new Date(b))
-    .map(month => ({
-      month,
-      courses: coursesGroupedByMonth[month],
-    }));
+      return acc;
+  }, {});
 
-  return orderedCourses;
+  return Object.entries(coursesGroupedByMonth).map(([month, courses]) => ({ month, courses }));
 }
 
 
 
-
-
+//********************************************************* */
 // **********************************************************
 // Stripe
 async function checkoutSession(req) {
