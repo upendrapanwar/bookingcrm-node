@@ -178,10 +178,27 @@ function getAllUsers(req, res, next) {
 * 
 * @return JSON|null
 */
+// function getAllCourses(req, res, next) {
+//   userService.getAllCourses(req.params)
+//     .then(allCourses => allCourses ? res.status(200).json({ status: true, data: allCourses }) : res.status(400).json({ status: false, message: msg.admin.add_course, data: [] }))
+//     .catch(err => next(res.json({ status: false, message: err })));
+// }
+
 function getAllCourses(req, res, next) {
   userService.getAllCourses(req.params)
-    .then(allCourses => allCourses ? res.status(200).json({ status: true, data: allCourses }) : res.status(400).json({ status: false, message: msg.admin.add_course, data: [] }))
-    .catch(err => next(res.json({ status: false, message: err })));
+    .then(allCourses => {
+      if (allCourses) {
+        console.log('Fetched Courses:', allCourses); // Log the data to check if it's correct
+        return res.status(200).json({ status: true, data: allCourses });
+      } else {
+        console.log('No courses found');
+        return res.status(400).json({ status: false, message: 'No courses available', data: [] });
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching courses:', err); // Log the error to understand what went wrong
+      return next({ status: false, message: err.message || 'An error occurred' });
+    });
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
