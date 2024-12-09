@@ -37,9 +37,9 @@ router.post("/save-topay-payment-details", saveToPayPaymentDetails);
 
 
 router.get("/get-courses-zoomlink", getCourseZoomLink);
-
-
-
+router.post("/add-ticket",addTicket);
+router.post("/contact-us",manegeContactUs);
+router.get('/get-all-tickets', getAllTickets);
 
 module.exports = router;
 
@@ -168,6 +168,7 @@ function getAllUsers(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+
 /**
 * Function to get all the courses list
 * 
@@ -313,3 +314,35 @@ function getCourseZoomLink(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+function addTicket(req, res, next) {
+  userService.addTicket(req)
+    .then(result => result ? res.status(200).json({ status: true, data: result }) : res.status(400).json({ status: false, message: "Error in getting found data.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function manegeContactUs(req, res, next) {
+  userService.manegeContactUs(req)
+    .then(result => result ? res.status(200).json({ status: true, data: result }) : res.status(400).json({ status: false, message: "Error in getting found data.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+* Function to get all the ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getAllTickets(req, res, next) {
+  userService.getAllTickets(req.params)
+    .then(allTickets => allTickets ? res.status(200).json({ status: true, data: allTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+

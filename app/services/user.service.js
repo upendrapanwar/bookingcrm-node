@@ -27,12 +27,15 @@ const bcrypt = require("bcryptjs");
 
 const msg = require("../helpers/messages.json");
 
+const { ObjectId } = require("mongodb");
+
 const {
   User,
   Courses,
   Orders,
   Payments,
-  Instructor
+  Instructor,
+  Tickets
 } = require("../helpers/db");
 
 module.exports = {
@@ -63,6 +66,9 @@ module.exports = {
   saveToPayPaymentDetails,
 
   getCourseZoomLink,
+  addTicket,
+  manegeContactUs,
+  getAllTickets
 };
 
 /*****************************************************************************************/
@@ -223,6 +229,8 @@ async function getAllUsers() {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+
+
 /**
 * Manages get All Course operations
 *
@@ -838,3 +846,185 @@ async function getCourseZoomLink(req) {
 };
 /*****************************************************************************************/
 /*****************************************************************************************/
+/**
+ * Function to save the ticket data
+ * 
+ * @param {*} param 
+ * @returns objectArray|false
+ */
+async function addTicket(param) {
+  let imageName = '';
+  if(param.body.screenshot) {
+    const parsedUrl = new URL(param.body.screenshot);  // Parse the URL
+    const pathname = parsedUrl.pathname;  // Get the pathname part
+    const parts = pathname.split('/');
+    imageName = parts[parts.length - 1];
+  } 
+  
+  try {
+    const tickets = new Tickets({
+      firstName: param.body.tfirstName,
+      lastName: param.body.tlastName,
+      email: param.body.temail,
+      subject: param.body.subject,
+      message: param.body.tmessage,
+      status: param.body.status,
+      image_id:param.body.image_id,
+      screenshot:param.body.screenshot
+    })
+
+    const ticketData = await tickets.save();
+    
+    if (ticketData) {
+      const customData = {
+        title:'New Ticket Email',
+        emailTemplate: 'newTicket',
+        firstName: param.body.tfirstName,
+        lastname: param.body.tlastName,
+        message: param.body.tmessage,
+        ticketUrl: 'http://localhost:3000/contact-us',
+        copyrightDate: new Date().getFullYear(),
+        filename: imageName,
+        path: param.body.screenshot
+      }
+
+      const mailOptions = {
+        from: `"Booking App Live" <${config.mail_from_email}>`,
+        to: `"Booking App Live" <${param.body.temail}>`,
+        subject: param.body.subject,
+        html: param.body.tmessage,
+        data: customData
+      };
+      const emailResult = await SendEmail(mailOptions);
+      return ticketData;
+    } else {
+      return false;
+    }
+  }  
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+    
+};
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to save the ticket screenshot
+ * 
+ * @param {*} param 
+ * @returns objectArray|false
+ */
+async function manegeContactUs(param) {
+  
+  try {
+    const customData = {
+      title:'Contact Us',
+      emailTemplate: 'contactForm',
+      firstName: param.body.firstName,
+      lastname: param.body.lastName,
+      message: param.body.message,
+      copyrightDate: new Date().getFullYear()
+    }
+    const mailOptions = {
+      from: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+      replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+      to: `"Booking App Live" <${param.body.email}>`,
+      subject: param.body.subject,
+      html: param.body.message,
+      data: customData
+    };
+
+    const adminCustomData = {
+      title:'Contact Us',
+      emailTemplate: 'contactForm',
+      firstName: 'Admin',
+      lastname: param.body.lastName,
+      message: param.body.message,
+      copyrightDate: new Date().getFullYear()
+    }
+    const emailResult = await SendEmail(mailOptions);
+
+    const adminMailOptions = {
+      from: `"Booking App Live" <${param.body.email}>`,
+      replyTo: `"Booking App Live" <${param.body.email}>`,
+      to: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+      subject: param.body.subject,
+      html: param.body.message,
+      data: adminCustomData
+    };
+    const adminEmailResult = await SendEmail(adminMailOptions);
+     
+    if (adminEmailResult) {
+      return true;
+    } else {
+      return false;
+    }
+  }  
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+    
+};
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to save the ticket screenshot
+ * 
+ * @param {*} param 
+ * @returns objectArray|false
+ */
+/*
+async function screenshot(param) {
+  
+  try {
+    const filter = {
+      _id: new ObjectId(param.body.ticketId)
+    };
+    
+    const update = {
+      $set: {
+        // Specify the fields you want to update
+        screenshot: param.body.screenshot,
+        image_id:param.body.image_id,
+      }
+    };
+
+    const options = {
+      returnDocument: "after" // Returns the updated document
+    };
+
+    const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+    
+    if (ticketData) {
+      return ticketData;
+    } else {
+      return false;
+    }
+  }  
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+    
+};*/
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get All Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getAllTickets() {
+  const result = await Tickets.find().select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
