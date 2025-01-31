@@ -37,7 +37,7 @@ mongoose.Promise = global.Promise;
 
 
 const ENV = config.app_env;
-console.log("env=" + config.app_env);
+//console.log("env=" + config.app_env);
 var SWAG_URL = ENV == "local" ? config.local_url : config.dev_url;
 var PORT = ENV == "local" ? config.local_port : config.dev_port;
 

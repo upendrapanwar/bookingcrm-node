@@ -10,7 +10,7 @@ const config = require('../config/index');
 const SendEmail = require("../helpers/email");
 //const axios = require('axios');
 //const https = requrie('https');
-// const moongoose = require('mongoose');
+const mongoose = require('mongoose');
 // moongoose.connect(process.env.MONGODB_URI || config.connectionString,{
 //     useNewUrlParser: true,
 //     useUnifiedTopology: true,
@@ -35,7 +35,8 @@ const {
   Orders,
   Payments,
   Instructor,
-  Tickets
+  Tickets,
+  TicketReplies
 } = require("../helpers/db");
 
 module.exports = {
@@ -68,7 +69,15 @@ module.exports = {
   getCourseZoomLink,
   addTicket,
   manegeContactUs,
-  getAllTickets
+  getOpenTickets,
+  getWaitTickets,
+  getClosedTickets,
+  getAllTickets,
+  getRepliesDetailsId,
+  setReplyById,
+  setStausById,
+  deleteSelectedTickets,
+  emailExists
 };
 
 /*****************************************************************************************/
@@ -325,29 +334,29 @@ async function getAllCourses(param) {
 
   // Optimized query
   const result = await Courses.find({
-      isActive: true,
-      course_schedule_dates: { $gte: currentDate } 
+    isActive: true,
+    course_schedule_dates: { $gte: currentDate }
   }).select().sort({ createdAt: 'desc' });
 
   if (!result.length) {
-      return [];
+    return [];
   }
 
   const coursesGroupedByMonth = result.reduce((acc, course) => {
-      const hasPastDate = course.course_schedule_dates.some(dateString => {
-          const date = new Date(dateString);
-          return date < currentDate;
-      });
+    const hasPastDate = course.course_schedule_dates.some(dateString => {
+      const date = new Date(dateString);
+      return date < currentDate;
+    });
 
-      if (!hasPastDate) {
-          const earliestDate = new Date(course.course_schedule_dates[0]);
-          const monthKey = `${earliestDate.toLocaleString('default', { month: 'long' })} ${earliestDate.getFullYear()}`;
-          
-          if (!acc[monthKey]) acc[monthKey] = [];
-          acc[monthKey].push(course);
-      }
+    if (!hasPastDate) {
+      const earliestDate = new Date(course.course_schedule_dates[0]);
+      const monthKey = `${earliestDate.toLocaleString('default', { month: 'long' })} ${earliestDate.getFullYear()}`;
 
-      return acc;
+      if (!acc[monthKey]) acc[monthKey] = [];
+      acc[monthKey].push(course);
+    }
+
+    return acc;
   }, {});
 
   return Object.entries(coursesGroupedByMonth).map(([month, courses]) => ({ month, courses }));
@@ -498,7 +507,7 @@ async function sendPaymentEmail(param) {
 /*****************************************************************************************/
 
 async function saveOrderDetails(param) {
-   // console.log('saveOrderDetails', param);
+  // console.log('saveOrderDetails', param);
   try {
     const orders = new Orders({
 
@@ -535,7 +544,7 @@ async function saveOrderDetails(param) {
 async function sendWellcomeEmail(param) {
   const { email, firstName } = param.body.formvalues;
   const courses_data = param.body.courses_data;
- // console.log("courses_data--wellcome", courses_data);
+  // console.log("courses_data--wellcome", courses_data);
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -585,18 +594,18 @@ async function sendWellcomeEmail(param) {
 async function sendEmailToAdmin(param) {
   console.log("courses_data for admin ---", param.body);
   const { email, firstName } = param.body.formvalues;
-  const  paymentIntent = param.body.paymentIntent;
+  const paymentIntent = param.body.paymentIntent;
   const { classLink } = param.body;
   const courses_data = param.body.courses_data || [];
   const orderDetails = param.body.orderDetails;
 
   const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;"> ${index+1}.${course.zoom_links}</p>`
+    `<p style="margin-left:75px;"> ${index + 1}.${course.zoom_links}</p>`
   );
- 
+
   const courseTitlesHtml = courses_data
-  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-  .join(' ');
+    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+    .join(' ');
 
 
   const mailOptions = {
@@ -678,7 +687,7 @@ async function getOrderDetails(id) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function savePaymentDetails(param) {
- // console.log('savePaymentDetails----param',param)
+  // console.log('savePaymentDetails----param',param)
   try {
     const orders = new Payments({
       userId: param.studentRegisterResponse.data.id,
@@ -863,9 +872,9 @@ async function sendEmailToPayAdmin(param) {
 
 
   const courseTitlesHtml = courses_data
-  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-  .join(' ');
- 
+    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+    .join(' ');
+
 
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
@@ -961,13 +970,13 @@ async function getCourseZoomLink(req) {
  */
 async function addTicket(param) {
   let imageName = '';
-  if(param.body.screenshot) {
+  if (param.body.screenshot) {
     const parsedUrl = new URL(param.body.screenshot);  // Parse the URL
     const pathname = parsedUrl.pathname;  // Get the pathname part
     const parts = pathname.split('/');
     imageName = parts[parts.length - 1];
-  } 
-  
+  }
+
   try {
     const tickets = new Tickets({
       firstName: param.body.tfirstName,
@@ -976,15 +985,15 @@ async function addTicket(param) {
       subject: param.body.subject,
       message: param.body.tmessage,
       status: param.body.status,
-      image_id:param.body.image_id,
-      screenshot:param.body.screenshot
+      image_id: param.body.image_id,
+      screenshot: param.body.screenshot
     })
 
     const ticketData = await tickets.save();
-    
+
     if (ticketData) {
       const customData = {
-        title:'New Ticket Email',
+        title: 'New Ticket Email',
         emailTemplate: 'newTicket',
         firstName: param.body.tfirstName,
         lastname: param.body.tlastName,
@@ -1003,16 +1012,26 @@ async function addTicket(param) {
         data: customData
       };
       const emailResult = await SendEmail(mailOptions);
+
+      const ticketReplies = new TicketReplies({
+        ticketId: ticketData._id,
+        senderEmail: param.body.temail,
+        recieverEmail: 'admintest@gmail.com',
+        reply: param.body.tmessage,
+      })
+
+      const ticketRepliesData = await ticketReplies.save();
+
       return ticketData;
     } else {
       return false;
     }
-  }  
+  }
   catch (error) {
     console.error("Error data has not found:", error);
     return false;
   }
-    
+
 };
 /*****************************************************************************************/
 /*****************************************************************************************/
@@ -1023,10 +1042,10 @@ async function addTicket(param) {
  * @returns objectArray|false
  */
 async function manegeContactUs(param) {
-  
+
   try {
     const customData = {
-      title:'Contact Us',
+      title: 'Contact Us',
       emailTemplate: 'contactForm',
       firstName: param.body.firstName,
       lastname: param.body.lastName,
@@ -1043,7 +1062,7 @@ async function manegeContactUs(param) {
     };
 
     const adminCustomData = {
-      title:'Contact Us',
+      title: 'Contact Us',
       emailTemplate: 'contactForm',
       firstName: 'Admin',
       lastname: param.body.lastName,
@@ -1061,18 +1080,18 @@ async function manegeContactUs(param) {
       data: adminCustomData
     };
     const adminEmailResult = await SendEmail(adminMailOptions);
-     
+
     if (adminEmailResult) {
       return true;
     } else {
       return false;
     }
-  }  
+  }
   catch (error) {
     console.error("Error data has not found:", error);
     return false;
   }
-    
+
 };
 /*****************************************************************************************/
 /*****************************************************************************************/
@@ -1125,8 +1144,8 @@ async function screenshot(param) {
  *
  * @returns Object|null
  */
-async function getAllTickets() {
-  const result = await Tickets.find().select().sort({ createdAt: 'desc' });
+async function getAllTickets(param) {
+  const result = await Tickets.find({ email: param.id}).select().sort({ updatedAt: 'desc' });
 
   if (result && result.length > 0) return result;
 
@@ -1134,4 +1153,272 @@ async function getAllTickets() {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+/**
+ * Get open Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getOpenTickets(param) {
+  
+  const result = await Tickets.find({ email: param.id, status: "open" }).select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get waiting Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getWaitTickets(param) {
+  const result = await Tickets.find({ email: param.id, status: "waiting" }).select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Get closed Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getClosedTickets(param) {
+  const result = await Tickets.find({ email: param.id, status: "closed" }).select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Get reply by ticket id
+ *
+ * @param null
+ *
+ * @returns Object|false
+ */
+async function getRepliesDetailsId(param) {
+  const ticketId = param.id;
+
+  if (!ticketId) throw new Error('Ticket ID is undefined');
+
+  try {
+    const result = await Tickets.aggregate([
+      {
+        $match: { "_id": new ObjectId(ticketId) }
+      },
+      {
+        $lookup: {
+          from: "ticketreplies",
+          localField: "_id",
+          foreignField: "ticketId",
+          as: "replies_details"
+        }
+      },
+      {
+        $unwind: "$replies_details"
+      },
+      {
+        $sort: { "replies_details.createdAt": -1 }
+      },
+      {
+        $project: {
+          _id: 1,
+          ticket: "$$ROOT"
+        }
+      }
+    ]);
+
+    if (result.length === 0) {
+      throw new Error('No Result for Ticket ID');
+
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error('Error fetching ticket replies details:', error);
+    throw new Error('Could not fetch ticket replies details. Please try again later.');
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Set reply by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setReplyById(param) {
+  try {
+    const ticketId = param.body.ticketId;
+
+    const ticketreplies = new TicketReplies({
+      ticketId: param.body.ticketId,
+      senderEmail: param.body.senderEmail,
+      recieverEmail: param.body.recieverEmail,
+      reply: param.body.message,
+    })
+
+    const ticketrepliesData = await ticketreplies.save();
+    if (ticketrepliesData) {
+      const filter = {
+        _id: new ObjectId(ticketId)
+      };
+
+      const update = {
+        $set: {
+          // Specify the fields you want to update
+          status: param.body.status,
+        }
+      };
+
+      const options = {
+        returnDocument: "after" // Returns the updated document
+      };
+
+      const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+
+      if (ticketData) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+  }
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Set status by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setStausById(param) {
+  try {
+
+    const ticketId = param.body.ticketId;
+
+    const filter = {
+      _id: new ObjectId(ticketId)
+    };
+
+    const update = {
+      $set: {
+        status: param.body.status,
+      }
+    };
+
+    const options = {
+      returnDocument: "after" // Returns the updated document
+    };
+
+    const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+
+    if (ticketData) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Delete selected tickets by single or multiple ids
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function deleteSelectedTickets(param) {
+  try {
+    const result = await mongoose.connection.transaction(async (session) => {
+      const ticketIds = param.body;
+
+      const deleteRepliesResult = await TicketReplies.deleteMany({
+        ticketId: { $in: ticketIds }
+      }).session(session);
+
+      const deleteTicketsResult = await Tickets.deleteMany({
+        _id: { $in: ticketIds }
+      }).session(session);
+
+      if (deleteRepliesResult.deletedCount === 0 || deleteTicketsResult.deletedCount === 0) {
+        throw new Error('Nothing was deleted');
+      }
+
+      return true;
+    });
+
+    console.log('Transaction committed successfully');
+    return result;
+
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get closed Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function emailExists(param) {
+  const emailId = param.body.email;
+  console.log("emailId=",emailId);
+  try {
+    const userData = await Tickets.find({ email: emailId }).select();
+
+    if (userData && userData.length > 0) return userData;
+
+    return false;
+  }
+  
+  catch (error) {
+    console.error('Error data has not found:', error);
+    return false;
+  }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+
 

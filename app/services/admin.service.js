@@ -16,7 +16,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const slugify = require('slugify');
 const msg = require("../helpers/messages.json");
-
+const mongoose = require('mongoose');
+const { ObjectId } = require("mongodb");
 const {
     User,
     Courses,
@@ -24,6 +25,8 @@ const {
     Instructors,
     Orders,
     Payments,
+    Tickets,
+    TicketReplies
 } = require("../helpers/db");
 
 module.exports = {
@@ -47,6 +50,15 @@ module.exports = {
     getAllPaymentDetails,
     getAllOrderDetails,
     getAllUsers,
+    deleteSelectedTickets,
+    setStausById,
+    getAllTickets,
+    getOpenTickets,
+    getWaitTickets,
+    getClosedTickets,
+    setReplyById,
+    getRepliesDetailsId,
+    addTicket
 };
 
 /*****************************************************************************************/
@@ -686,3 +698,339 @@ async function getAllUsers() {
 
     return false;
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Delete selected tickets by single or multiple ids
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function deleteSelectedTickets(param) {
+  try {
+    const result = await mongoose.connection.transaction(async (session) => {
+      const ticketIds = param.body;
+
+      const deleteRepliesResult = await TicketReplies.deleteMany({
+        ticketId: { $in: ticketIds }
+      }).session(session);
+
+      const deleteTicketsResult = await Tickets.deleteMany({
+        _id: { $in: ticketIds }
+      }).session(session);
+
+      if (deleteRepliesResult.deletedCount === 0 || deleteTicketsResult.deletedCount === 0) {
+        throw new Error('Nothing was deleted');
+      }
+
+      return true;
+    });
+
+    console.log('Transaction committed successfully');
+    return result;
+
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Set status by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setStausById(param) {
+    try {
+  
+      const ticketId = param.body.ticketId;
+  
+      const filter = {
+        _id: new ObjectId(ticketId)
+      };
+  
+      const update = {
+        $set: {
+          status: param.body.status,
+        }
+      };
+  
+      const options = {
+        returnDocument: "after" // Returns the updated document
+      };
+  
+      const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+  
+      if (ticketData) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    catch (error) {
+      console.error("Error data has not found:", error);
+      return false;
+    }
+  
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get All Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getAllTickets() {
+    const result = await Tickets.find().select().sort({ updatedAt: 'desc' });
+  
+    if (result && result.length > 0) return result;
+  
+    return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get open Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getOpenTickets() {
+  
+    const result = await Tickets.find({ status: "open" }).select().sort({ createdAt: 'desc' });
+  
+    if (result && result.length > 0) return result;
+  
+    return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get waiting Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getWaitTickets() {
+    const result = await Tickets.find({ status: "waiting" }).select().sort({ createdAt: 'desc' });
+  
+    if (result && result.length > 0) return result;
+  
+    return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get closed Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getClosedTickets() {
+    const result = await Tickets.find({ status: "closed" }).select().sort({ createdAt: 'desc' });
+  
+    if (result && result.length > 0) return result;
+  
+    return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Set reply by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setReplyById(param) {
+    try {
+      const ticketId = param.body.ticketId;
+      const ticketreplies = new TicketReplies({
+        ticketId: param.body.ticketId,
+        senderEmail: param.body.senderEmail,
+        recieverEmail: param.body.recieverEmail,
+        reply: param.body.message,
+      })
+  
+      const ticketrepliesData = await ticketreplies.save();
+      if (ticketrepliesData) {
+        const filter = {
+          _id: new ObjectId(ticketId)
+        };
+  
+        const update = {
+          $set: {
+            // Specify the fields you want to update
+            status: param.body.status,
+          }
+        };
+  
+        const options = {
+          returnDocument: "after" // Returns the updated document
+        };
+  
+        const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+  
+        if (ticketData) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+  
+    }
+    catch (error) {
+      console.error("Error data has not found:", error);
+      return false;
+    }
+  
+  }
+  /*****************************************************************************************/
+  /*****************************************************************************************/
+  /**
+ * Get reply by ticket id
+ *
+ * @param null
+ *
+ * @returns Object|false
+ */
+async function getRepliesDetailsId(param) {
+    const ticketId = param.id;
+  
+    if (!ticketId) throw new Error('Ticket ID is undefined');
+    
+    //if (!ObjectId.isValid(ticketId)) {
+    //    console.log("Invalid ObjectId");
+    //    throw new Error("Invalid ObjectId");
+    //}
+    
+    try {
+        
+      const result = await Tickets.aggregate([
+        {
+          $match: { "_id": new ObjectId(ticketId) }
+        },
+        {
+          $lookup: {
+            from: "ticketreplies",
+            localField: "_id",
+            foreignField: "ticketId",
+            as: "replies_details"
+          }
+        },
+        {
+          $unwind: "$replies_details"
+        },
+        {
+          $sort: { "replies_details.createdAt": -1 }
+        },
+        {
+          $project: {
+            _id: 1,
+            ticket: "$$ROOT"
+          }
+        }
+      ]);
+      
+      if (result.length === 0) {
+        throw new Error('No Result for Ticket ID');
+  
+      }
+  
+      return result;
+  
+    } catch (error) {
+      console.error('Error fetching ticket replies details:', error);
+      throw new Error('Could not fetch ticket replies details. Please try again later.');
+    }
+  
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Function to save the ticket data
+ * 
+ * @param {*} param 
+ * @returns objectArray|false
+ */
+async function addTicket(param) {
+    let imageName = '';
+    if (param.body.screenshot) {
+      const parsedUrl = new URL(param.body.screenshot);  // Parse the URL
+      const pathname = parsedUrl.pathname;  // Get the pathname part
+      const parts = pathname.split('/');
+      imageName = parts[parts.length - 1];
+    }
+  
+    try {
+      const tickets = new Tickets({
+        firstName: param.body.tfirstName,
+        lastName: param.body.tlastName,
+        email: param.body.temail,
+        subject: param.body.subject,
+        message: param.body.tmessage,
+        status: param.body.status,
+        image_id: param.body.image_id,
+        screenshot: param.body.screenshot
+      })
+  
+      const ticketData = await tickets.save();
+  
+      if (ticketData) {
+        const customData = {
+          title: 'New Ticket Email',
+          emailTemplate: 'newTicket',
+          firstName: param.body.tfirstName,
+          lastname: param.body.tlastName,
+          message: param.body.tmessage,
+          ticketUrl: process.env.LOCAL_URL+'/contact-us',
+          copyrightDate: new Date().getFullYear(),
+          filename: imageName,
+          path: param.body.screenshot
+        }
+  
+        const mailOptions = {
+          from: `"Booking App Live" <${config.mail_from_email}>`,
+          to: `"Booking App Live" <${param.body.temail}>`,
+          subject: param.body.subject,
+          html: param.body.tmessage,
+          data: customData
+        };
+        const emailResult = await SendEmail(mailOptions);
+  
+        const ticketReplies = new TicketReplies({
+          ticketId: ticketData._id,
+          senderEmail: 'admintest@gmail.com',
+          recieverEmail: param.body.temail,
+          reply: param.body.tmessage,
+        })
+  
+        const ticketRepliesData = await ticketReplies.save();
+  
+        return ticketData;
+      } else {
+        return false;
+      }
+    }
+    catch (error) {
+      console.error("Error data has not found:", error);
+      return false;
+    }
+  
+  };
+  /*****************************************************************************************/
+  /*****************************************************************************************/
