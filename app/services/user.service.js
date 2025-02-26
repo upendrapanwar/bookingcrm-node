@@ -10,7 +10,7 @@ const config = require('../config/index');
 const SendEmail = require("../helpers/email");
 //const axios = require('axios');
 //const https = requrie('https');
-// const moongoose = require('mongoose');
+const mongoose = require('mongoose');
 // moongoose.connect(process.env.MONGODB_URI || config.connectionString,{
 //     useNewUrlParser: true,
 //     useUnifiedTopology: true,
@@ -36,7 +36,10 @@ const {
   Payments,
   Instructors,
   Tickets,
-  Reviews
+  Reviews,
+  Instructor,
+  Tickets,
+  TicketReplies
 } = require("../helpers/db");
 
 module.exports = {
@@ -75,6 +78,15 @@ module.exports = {
   getCourseById,
   courseReviewVerify,
   addReview,
+  getOpenTickets,
+  getWaitTickets,
+  getClosedTickets,
+  getAllTickets,
+  getRepliesDetailsId,
+  setReplyById,
+  setStausById,
+  deleteSelectedTickets,
+  emailExists
 };
 
 /*****************************************************************************************/
@@ -537,6 +549,7 @@ async function sendPaymentEmail(param) {
 
 async function saveOrderDetails(param) {
   console.log('saveOrderDetails', param);
+  // console.log('saveOrderDetails', param);
   try {
     const orders = new Orders({
       studentId: param.studentRegisterResponse.data.id,
@@ -1116,6 +1129,16 @@ async function addTicket(param) {
         data: customData
       };
       const emailResult = await SendEmail(mailOptions);
+
+      const ticketReplies = new TicketReplies({
+        ticketId: ticketData._id,
+        senderEmail: param.body.temail,
+        recieverEmail: 'admintest@gmail.com',
+        reply: param.body.tmessage,
+      })
+
+      const ticketRepliesData = await ticketReplies.save();
+
       return ticketData;
     } else {
       return false;
@@ -1238,8 +1261,41 @@ async function screenshot(param) {
  *
  * @returns Object|null
  */
-async function getAllTickets() {
-  const result = await Tickets.find().select().sort({ createdAt: 'desc' });
+async function getAllTickets(param) {
+  const result = await Tickets.find({ email: param.id}).select().sort({ updatedAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get open Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getOpenTickets(param) {
+  
+  const result = await Tickets.find({ email: param.id, status: "open" }).select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get waiting Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getWaitTickets(param) {
+  const result = await Tickets.find({ email: param.id, status: "waiting" }).select().sort({ createdAt: 'desc' });
 
   if (result && result.length > 0) return result;
 

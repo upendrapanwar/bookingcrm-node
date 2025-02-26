@@ -39,7 +39,15 @@ router.post("/save-topay-payment-details", saveToPayPaymentDetails);
 router.get("/get-courses-zoomlink", getCourseZoomLink);
 router.post("/add-ticket",addTicket);
 router.post("/contact-us",manegeContactUs);
-router.get('/get-all-tickets', getAllTickets);
+router.get('/get-open-tickets/:id', getOpenTickets);
+router.get('/get-wait-tickets/:id', getWaitTickets);
+router.get('/get-closed-tickets/:id', getClosedTickets);
+router.get('/get-all-tickets/:id', getAllTickets);
+router.get('/get-replies-details/:id', getRepliesDetailsId);
+router.post('/save-ticket-reply', setReplyById);
+router.post('/change-ticket-status', setStausById);
+router.post('/delete-selected-tickets', deleteSelectedTickets);
+router.post('/email-exist', emailExists);
 
 router.post("/find-instructor",findInstructor);
 router.get("/get-course-byId/:id",getCourseById);
@@ -195,7 +203,6 @@ function getAllCourses(req, res, next) {
   userService.getAllCourses(req.params)
     .then(allCourses => {
       if (allCourses) {
-        console.log('Fetched Courses:', allCourses); // Log the data to check if it's correct
         return res.status(200).json({ status: true, data: allCourses });
       } else {
         console.log('No courses found');
@@ -369,6 +376,137 @@ function getAllTickets(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+/**
+* Function to get all open ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getOpenTickets(req, res, next) {
+  userService.getOpenTickets(req.params)
+    .then(openTickets => openTickets ? res.status(200).json({ status: true, data: openTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all waiting ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getWaitTickets(req, res, next) {
+  userService.getWaitTickets(req.params)
+    .then(waitTickets => waitTickets ? res.status(200).json({ status: true, data: waitTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all closed ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getClosedTickets(req, res, next) {
+  userService.getClosedTickets(req.params)
+    .then(closedTickets => closedTickets ? res.status(200).json({ status: true, data: closedTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get ticket details and messages
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getRepliesDetailsId(req, res, next) {
+  userService.getRepliesDetailsId(req.params)
+    .then(repliesDetails => repliesDetails ? res.status(200).json({ status: true, data: repliesDetails }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to set ticket reply by ticket id
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function setReplyById(req, res, next) {
+  userService.setReplyById(req)
+    .then(reply => reply ? res.status(200).json({ status: true, data: reply }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to set ticket status by ticket id
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function setStausById(req, res, next) {
+  userService.setStausById(req)
+    .then(ticketStatus => ticketStatus ? res.status(200).json({ status: true, data: ticketStatus }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function delete selected tickets by single or multiple ids
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function deleteSelectedTickets(req, res, next) {
+  userService.deleteSelectedTickets(req)
+    .then(tickets => tickets ? res.status(200).json({ status: true, data: tickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function delete selected tickets by single or multiple ids
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function emailExists(req, res, next) {
+  userService.emailExists(req)
+    .then(emailexist => emailexist ? res.status(200).json({ status: true, data: emailexist }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+
 
 function findInstructor(req, res, next) {
   userService.findInstructor(req.body)

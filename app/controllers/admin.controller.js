@@ -26,11 +26,24 @@ router.put('/update_course_status', updateCourseStatus);
 router.get("/get-payment-details", getAllPaymentDetails)
 router.get("/get-all-order-details", getAllOrderDetails);
 router.get('/get-all-users', getAllUsers);
+<<<<<<< HEAD
 router.get('/get_Orders', getOrders);
 router.delete('/delete_order', deleteOrder);
 router.get('/get_order_byId/:id', getOrderById);
 router.delete('/delete_User', deleteUser);
 router.delete('/delete-course-review', deleteCourseReview);
+=======
+router.post('/delete-selected-tickets', deleteSelectedTickets);
+router.post('/change-ticket-status', setStausById);
+router.get('/get-all-tickets', getAllTickets);
+router.get('/get-open-tickets', getOpenTickets);
+router.get('/get-wait-tickets', getWaitTickets);
+router.get('/get-closed-tickets', getClosedTickets);
+router.post('/save-ticket-reply', setReplyById);
+router.get('/get-replies-details/:id', getRepliesDetailsId);
+router.post("/add-ticket",addTicket);
+
+>>>>>>> 7a51b0b88c2e0176d1717db355a6e7dfb2ec18f2
 
 module.exports = router;
 
@@ -614,6 +627,7 @@ function getAllUsers(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
+<<<<<<< HEAD
 
 function getOrders(req, res, next) {
     adminService
@@ -744,5 +758,142 @@ function deleteCourseReview(req, res, next) {
         );
 }
 
+=======
+/**
+* Function delete selected tickets by single or multiple ids
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function deleteSelectedTickets(req, res, next) {
+    adminService.deleteSelectedTickets(req)
+      .then(tickets => tickets ? res.status(200).json({ status: true, data: tickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+* Function to set ticket status by ticket id
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function setStausById(req, res, next) {
+    adminService.setStausById(req)
+      .then(ticketStatus => ticketStatus ? res.status(200).json({ status: true, data: ticketStatus }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all the ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getAllTickets(req, res, next) {
+    adminService.getAllTickets(req.params)
+      .then(allTickets => allTickets ? res.status(200).json({ status: true, data: allTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all open ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getOpenTickets(req, res, next) {
+    adminService.getOpenTickets()
+      .then(openTickets => openTickets ? res.status(200).json({ status: true, data: openTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all waiting ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getWaitTickets(req, res, next) {
+    adminService.getWaitTickets()
+      .then(waitTickets => waitTickets ? res.status(200).json({ status: true, data: waitTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get all closed ticket list
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getClosedTickets(req, res, next) {
+    adminService.getClosedTickets()
+      .then(closedTickets => closedTickets ? res.status(200).json({ status: true, data: closedTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+* Function to set ticket reply by ticket id
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function setReplyById(req, res, next) {
+    adminService.setReplyById(req)
+      .then(reply => reply ? res.status(200).json({ status: true, data: reply }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+* Function to get ticket details and messages
+* 
+* @param {*} req 
+* @param {*} res 
+* @param {*} next 
+* 
+* @return JSON|null
+*/
+function getRepliesDetailsId(req, res, next) {
+    adminService.getRepliesDetailsId(req.params)
+      .then(repliesDetails => repliesDetails ? res.status(200).json({ status: true, data: repliesDetails }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+      .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+function addTicket(req, res, next) {
+    adminService.addTicket(req)
+    .then(result => result ? res.status(200).json({ status: true, data: result }) : res.status(400).json({ status: false, message: "Error in getting found data.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+>>>>>>> 7a51b0b88c2e0176d1717db355a6e7dfb2ec18f2
 /*****************************************************************************************/
 /*****************************************************************************************/
