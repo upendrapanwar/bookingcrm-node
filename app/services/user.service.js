@@ -79,13 +79,13 @@ module.exports = {
   addReview,
   getOpenTickets,
   getWaitTickets,
-  // getClosedTickets,
+  getClosedTickets,
   getAllTickets,
-  // getRepliesDetailsId,
-  // setReplyById,
-  // setStausById,
-  // deleteSelectedTickets,
-  // emailExists
+  getRepliesDetailsId,
+  setReplyById,
+  setStausById,
+  deleteSelectedTickets,
+  emailExists
 };
 
 /*****************************************************************************************/
@@ -1573,5 +1573,237 @@ async function addReview(param) {
   }
 }
 
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get closed Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function getClosedTickets(param) {
+  const result = await Tickets.find({ email: param.id, status: "closed" }).select().sort({ createdAt: 'desc' });
+
+  if (result && result.length > 0) return result;
+
+  return false;
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Get reply by ticket id
+ *
+ * @param null
+ *
+ * @returns Object|false
+ */
+async function getRepliesDetailsId(param) {
+  const ticketId = param.id;
+
+  if (!ticketId) throw new Error('Ticket ID is undefined');
+
+  try {
+    const result = await Tickets.aggregate([
+      {
+        $match: { "_id": new ObjectId(ticketId) }
+      },
+      {
+        $lookup: {
+          from: "ticketreplies",
+          localField: "_id",
+          foreignField: "ticketId",
+          as: "replies_details"
+        }
+      },
+      {
+        $unwind: "$replies_details"
+      },
+      {
+        $sort: { "replies_details.createdAt": -1 }
+      },
+      {
+        $project: {
+          _id: 1,
+          ticket: "$$ROOT"
+        }
+      }
+    ]);
+
+    if (result.length === 0) {
+      throw new Error('No Result for Ticket ID');
+
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error('Error fetching ticket replies details:', error);
+    throw new Error('Could not fetch ticket replies details. Please try again later.');
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Set reply by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setReplyById(param) {
+  try {
+    const ticketId = param.body.ticketId;
+
+    const ticketreplies = new TicketReplies({
+      ticketId: param.body.ticketId,
+      senderEmail: param.body.senderEmail,
+      recieverEmail: param.body.recieverEmail,
+      reply: param.body.message,
+    })
+
+    const ticketrepliesData = await ticketreplies.save();
+    if (ticketrepliesData) {
+      const filter = {
+        _id: new ObjectId(ticketId)
+      };
+
+      const update = {
+        $set: {
+          // Specify the fields you want to update
+          status: param.body.status,
+        }
+      };
+
+      const options = {
+        returnDocument: "after" // Returns the updated document
+      };
+
+      const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+
+      if (ticketData) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+
+  }
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Set status by ticket id
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function setStausById(param) {
+  try {
+
+    const ticketId = param.body.ticketId;
+
+    const filter = {
+      _id: new ObjectId(ticketId)
+    };
+
+    const update = {
+      $set: {
+        status: param.body.status,
+      }
+    };
+
+    const options = {
+      returnDocument: "after" // Returns the updated document
+    };
+
+    const ticketData = await Tickets.findOneAndUpdate(filter, update, options);
+
+    if (ticketData) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  catch (error) {
+    console.error("Error data has not found:", error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+/**
+ * Delete selected tickets by single or multiple ids
+ *
+ * @param id
+ *
+ * @returns Object|false
+ */
+async function deleteSelectedTickets(param) {
+  try {
+    const result = await mongoose.connection.transaction(async (session) => {
+      const ticketIds = param.body;
+
+      const deleteRepliesResult = await TicketReplies.deleteMany({
+        ticketId: { $in: ticketIds }
+      }).session(session);
+
+      const deleteTicketsResult = await Tickets.deleteMany({
+        _id: { $in: ticketIds }
+      }).session(session);
+
+      if (deleteRepliesResult.deletedCount === 0 || deleteTicketsResult.deletedCount === 0) {
+        throw new Error('Nothing was deleted');
+      }
+
+      return true;
+    });
+
+    console.log('Transaction committed successfully');
+    return result;
+
+  } catch (error) {
+    console.error('Transaction failed:', error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+/**
+ * Get closed Tickets
+ *
+ * @param null
+ *
+ * @returns Object|null
+ */
+async function emailExists(param) {
+  const emailId = param.body.email;
+  console.log("emailId=",emailId);
+  try {
+    const userData = await Tickets.find({ email: emailId }).select();
+
+    if (userData && userData.length > 0) return userData;
+
+    return false;
+  }
+  
+  catch (error) {
+    console.error('Error data has not found:', error);
+    return false;
+  }
+}
 /*****************************************************************************************/
 /*****************************************************************************************/
