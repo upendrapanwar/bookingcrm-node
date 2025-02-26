@@ -26,8 +26,11 @@ router.put('/update_course_status', updateCourseStatus);
 router.get("/get-payment-details", getAllPaymentDetails)
 router.get("/get-all-order-details", getAllOrderDetails);
 router.get('/get-all-users', getAllUsers);
-  
-
+router.get('/get_Orders', getOrders);
+router.delete('/delete_order', deleteOrder);
+router.get('/get_order_byId/:id', getOrderById);
+router.delete('/delete_User', deleteUser);
+router.delete('/delete-course-review', deleteCourseReview);
 
 module.exports = router;
 
@@ -609,5 +612,137 @@ function getAllUsers(req, res, next) {
       .then(allUsers => allUsers ? res.status(200).json({ status: true, data: allUsers }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
       .catch(err => next(res.json({ status: false, message: err })));
 }
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function getOrders(req, res, next) {
+    adminService
+        .getOrders(req)
+        .then((orders) =>
+            orders
+                ? res.status(201).json({
+                    status: true,
+                    // message: msg.admin.get_instructors.success,
+                     message: "Orders get successfully.",
+                    data: orders,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: " Error in getting Orders.",
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function deleteOrder(req, res, next) {
+    //console.log('delete order controler ')
+    adminService
+        .deleteOrder(req.body)
+        .then((order) =>
+            order
+                ? res.status(201).json({
+                    status: true,
+                    // message: msg.admin.get_instructors.success,
+                     message: "Order deleted successfully.",
+                    data: order,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: " Error in deleting Order.",
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function getOrderById(req, res, next) {
+    adminService
+        .getOrderById(req.params)
+        .then((order) =>
+            order
+                ? res.status(201).json({
+                    status: true,
+                    message: "Order get successfully.",
+                    data: order,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: " Error in getting Order.",
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function deleteUser(req, res, next) {
+    //console.log('delete order controler ')
+    adminService
+        .deleteUser(req.body)
+        .then((order) =>
+            order
+                ? res.status(201).json({
+                    status: true,
+                    // message: msg.admin.get_instructors.success,
+                     message: "User deleted successfully.",
+                    data: order,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: " Error in deleting User.",
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function deleteCourseReview(req, res, next) {
+    //console.log('delete Review controler ')
+    adminService
+        .deleteCourseReview(req.body)
+        .then((order) =>
+            order
+                ? res.status(201).json({
+                    status: true,
+                    // message: msg.admin.get_instructors.success,
+                     message: "Review deleted successfully.",
+                    data: order,
+                })
+                : res
+                    .status(400)
+                    .json({
+                        status: false,
+                        message: " Error in deleting Review.",
+                    })
+        )
+        .catch((err) =>
+            next(res.status(400).json({ status: false, message: err }))
+        );
+}
+
 /*****************************************************************************************/
 /*****************************************************************************************/

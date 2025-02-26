@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+
+<body style="font-family: 'Poppins', Arial, sans-serif">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table class="content" width="600" border="0" cellspacing="0" cellpadding="0"
+                    style="border-collapse: collapse; border: 1px solid #cccccc;">
+                    <!-- Header -->
+                    <tr>
+                        <td class="header"
+                            style="background-color: #345C72; padding: 40px; text-align: center; color: white; font-size: 24px;">
+                            {{title}}
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px; text-align: left; font-size: 16px; line-height: 1.6; color: #333;">
+                            <h2 style="margin: 0 0 10px;">Thank you for your payment {{name}},</h2>
+                            <p>We are pleased to inform you that your payment has been successfully processed.</p>
+
+                            {{!-- <table width="100%" border="0" cellspacing="0" cellpadding="0"
+                                style="margin: 20px 0;">
+                                <tr>
+                                    <td
+                                        style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; padding: 20px;">
+                                        <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
+                                        <p><strong>Name:</strong> {{studentData.firstName}}</p>
+                                        <p><strong>Email:</strong> {{studentData.email}}</p>
+                                    </td>
+                                </tr>
+                            </table> --}}
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 20px 0;">
+                                <tr>
+                                    <td
+                                        style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; padding: 20px;">
+                                        <h3 style="margin-top: 0; color: #363535;">Payment Details:</h3>
+                                        <p><strong>Payment ID:</strong> {{paymentData.paymentIntent_Id}}</p>
+                                        <p><strong>Amount Paid:</strong> £{{paymentData.amount}}</p>
+                                        <p><strong>Payment Status:</strong> {{paymentData.paymentStatus}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0"
+                                style="margin: 20px 0; border-collapse: collapse;">
+                                <!-- Titles Row -->
+                                <tr>
+                                    <td
+                                        style="font-weight: bold; text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        Course Title
+                                    </td>
+                                    <td
+                                        style="font-weight: bold; text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        Instructor Name
+                                    </td>
+                                    <td
+                                        style="font-weight: bold; text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        Zoom Link
+                                    </td>
+                                </tr>
+                                <!-- Values Row -->
+                                {{#each courseData}}
+                                <tr>
+                                    <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        {{course_title}}
+                                    </td>
+                                    <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        {{instructorName}}
+                                    </td>
+                                    <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                                        <a href="{{zoomLink}}" target="_blank"
+                                            style="color: #6772E5; text-decoration: none; font-size: 12px;">
+                                            {{zoom_links}}
+                                        </a>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </table>
+
+                            <p>If you have any questions about your payment, please don't hesitate to contact our
+                                support team.</p>
+
+                            <p style="font-style: italic;">Thank you for choosing our service!</p>
+                            <p>Best regards,<br>The Booking App Live Team</p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer"
+                            style="background-color: #333333; padding: 40px; text-align: center; color: white; font-size: 14px;">
+                            Copyright &copy; {{copyrightDate}} | Booking App Live. All rights reserved.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

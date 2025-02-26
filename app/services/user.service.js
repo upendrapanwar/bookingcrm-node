@@ -34,8 +34,9 @@ const {
   Courses,
   Orders,
   Payments,
-  Instructor,
-  Tickets
+  Instructors,
+  Tickets,
+  Reviews
 } = require("../helpers/db");
 
 module.exports = {
@@ -50,10 +51,10 @@ module.exports = {
 
   //nodeMailer 
   sendPaymentEmail,
-  sendWellcomeEmail,
-  sendEmailToAdmin,
+  // sendWellcomeEmail,
+  // sendEmailToAdmin,
   sendEmailToPayStudent,
-  sendEmailToPayAdmin,
+  //sendEmailToPayAdmin,
 
   //orders
   saveOrderDetails,
@@ -68,7 +69,12 @@ module.exports = {
   getCourseZoomLink,
   addTicket,
   manegeContactUs,
-  getAllTickets
+  getAllTickets,
+
+  findInstructor,
+  getCourseById,
+  courseReviewVerify,
+  addReview,
 };
 
 /*****************************************************************************************/
@@ -131,7 +137,7 @@ async function studentRegister(param) {
     const existingUser = await User.findOne({ email: param.formvalues.email });
 
     if (existingUser) {
-      console.log('email "' + param.formvalues.email + '" is already taken');
+      //  console.log('email "' + param.formvalues.email + '" is already taken');
       return {
         exists: true,
         data: existingUser
@@ -158,6 +164,52 @@ async function studentRegister(param) {
     });
 
     const savedUser = await user.save();
+
+    if (savedUser) {
+      //    console.log('userData--to send email---', savedUser)
+      const StudentData = {
+        StudentName: `${savedUser.first_name} ${savedUser.last_name}`,
+        studentEmail: savedUser.email,
+        studentId: savedUser.id
+      }
+
+      const customData = {
+        title: 'Welcome to Booking App Live!',
+        emailTemplate: 'UserWellcome',
+        firstName: savedUser.first_name,
+        lastname: savedUser.last_name,
+        copyrightDate: new Date().getFullYear()
+      }
+      const mailOptions = {
+        from: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+        replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+        to: `"Booking App Live" <${savedUser.email}>`,
+        subject: "Welcome to Booking App Live!",
+        data: customData
+      };
+
+      const adminCustomData = {
+        title: 'New student enrolled to Booking App Live!',
+        emailTemplate: 'AdminNewStudentEnrolled',
+        firstName: 'Admin',
+        // lastname: savedUser.last_name,
+        studentData: StudentData,
+        copyrightDate: new Date().getFullYear()
+      }
+      const adminmailOptions = {
+        from: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+        replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+        to: `"Booking App Live" <${process.env.mail_from_email}>`,
+        subject: "New student enrolled to Booking App Live!",
+        data: adminCustomData
+      };
+
+      const emailResult = await SendEmail(mailOptions);
+      const admiemailResult = await SendEmail(adminmailOptions);
+      console.error('emailResult of student--', emailResult)
+      console.error('emailResult--', admiemailResult)
+    }
+
 
     return {
       exists: false,
@@ -325,29 +377,29 @@ async function getAllCourses(param) {
 
   // Optimized query
   const result = await Courses.find({
-      isActive: true,
-      course_schedule_dates: { $gte: currentDate } 
+    isActive: true,
+    course_schedule_dates: { $gte: currentDate }
   }).select().sort({ createdAt: 'desc' });
 
   if (!result.length) {
-      return [];
+    return [];
   }
 
   const coursesGroupedByMonth = result.reduce((acc, course) => {
-      const hasPastDate = course.course_schedule_dates.some(dateString => {
-          const date = new Date(dateString);
-          return date < currentDate;
-      });
+    const hasPastDate = course.course_schedule_dates.some(dateString => {
+      const date = new Date(dateString);
+      return date < currentDate;
+    });
 
-      if (!hasPastDate) {
-          const earliestDate = new Date(course.course_schedule_dates[0]);
-          const monthKey = `${earliestDate.toLocaleString('default', { month: 'long' })} ${earliestDate.getFullYear()}`;
-          
-          if (!acc[monthKey]) acc[monthKey] = [];
-          acc[monthKey].push(course);
-      }
+    if (!hasPastDate) {
+      const earliestDate = new Date(course.course_schedule_dates[0]);
+      const monthKey = `${earliestDate.toLocaleString('default', { month: 'long' })} ${earliestDate.getFullYear()}`;
 
-      return acc;
+      if (!acc[monthKey]) acc[monthKey] = [];
+      acc[monthKey].push(course);
+    }
+
+    return acc;
   }, {});
 
   return Object.entries(coursesGroupedByMonth).map(([month, courses]) => ({ month, courses }));
@@ -391,134 +443,148 @@ async function checkoutSession(req) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendPaymentEmail(param) {
-  const { paymentIntent, amount, email, name, courses_data, classLink } = param.body;
-  const courseTitlesHtml = courses_data
-    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-    .join(' ');
+  const { paymentIntent, studentRegisterResponse, findInstructorResponse, orderDetails } = param.body;
 
-  const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;">${index + 1}. ${course.zoom_links}</p>`
-  );
+  const email = studentRegisterResponse.data.email;
+  const name = `${studentRegisterResponse.data.first_name} ${studentRegisterResponse.data.last_name}`;
 
+  let CourseData;
+
+  if (findInstructorResponse.length > 0) {
+    CourseData = findInstructorResponse.map(course => ({
+      course_title: course.course_title,
+      zoom_links: course.zoom_links,
+      course_quantity: course.course_quantity,
+      instructorName: course.instructorName,
+    }));
+  } else {
+
+    CourseData = [];
+  }
+
+  const PaymentData = {
+    paymentIntent_Id: paymentIntent.id,
+    paymentStatus: paymentIntent.status,
+    amount: (paymentIntent.amount / 100).toFixed(2),
+    order_Id: orderDetails.id
+  }
+
+
+  const StudentData = {
+    StudentName: name,
+    studentId: studentRegisterResponse.data.id,
+    studentEmail: studentRegisterResponse.data.email,
+  }
+
+  // console.log('email--', email)
+  // console.log('name--', name)
+  // console.log('CourseData--', CourseData)
+  // console.log('PaymentData--', PaymentData)
+  console.log('orderDetails--', orderDetails)
+
+  // Set custom data for email
+  const customData = {
+    title: 'Payment Confirmation',
+    emailTemplate: 'studentPaymentConfirmation',
+    firstName: name,
+    copyrightDate: new Date().getFullYear(),
+    courseData: CourseData,
+    paymentData: PaymentData
+  };
+
+  // Set mail options
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
+    replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
     to: email,
     subject: "Payment Confirmation - Booking App Live",
-    html: `
-     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">Payment Confirmation</h1>
-      </div>
-
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
-
-        <p>We are pleased to inform you that your payment has been successfully processed.</p>
-
-        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Payment ID:</strong> ${paymentIntent}</p>
-          
-        <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
-          <p><strong>Amount:</strong> €${(amount / 100).toFixed(2)}</p>
-          <p><strong>Instructor Name:</strong> Instructor test</p>
-          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
-          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        </div>
-
-        <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
-
-        <p style="font-style: italic;">Thank you for choosing our service!</p>
-
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
+    data: customData,
   };
-  const mailOptionsInstrutor = {
+
+  const adminCustomData = {
+    title: 'Payment Confirmation',
+    emailTemplate: 'adminPaymentConfirmation',
+    firstName: 'Admin',
+    copyrightDate: new Date().getFullYear(),
+    courseData: CourseData,
+    paymentData: PaymentData,
+    studentData: StudentData,
+  };
+
+  const mailOptionsAdmin = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
-    to: 'instructors@mailinator.com',
-    subject: "Booking Confirmation - Booking App Live",
-    html: `
-     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">Booking Confirmation</h1>
-      </div>
-
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Hi, Instructor test!</h2>
-
-        <p>We are pleased to inform you that booking has been successfully processed.</p>
-
-        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #333;">Booking Details:</h3>
-        
-       <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
-        <p><strong>Zoom link:</strong> "https://us05web.zoom.us/j/84578300481?pwd=b2cT52BuImRonWIphDkGDEDDvaziCy.1"</p>
-          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        </div>
-
-        <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
-
-        <p style="font-style: italic;">Thank you for choosing our service!</p>
-
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
+    replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+    to: `"Booking App Live" <${config.mail_from_email}>`,
+    subject: "Payment Confirmation - Booking App Live",
+    data: adminCustomData,
   };
+
+
   try {
     const emailResult = await SendEmail(mailOptions);
-    await SendEmail(mailOptionsInstrutor);
+    const adminEmailResult = await SendEmail(mailOptionsAdmin);
+    console.log('Email sent successfully:', emailResult);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
-    console.error("Error sending payment confirmation email:", error);
+    console.error('Error sending email:', error);
     return { success: false, message: "Failed to send payment confirmation email" };
   }
+
+
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
 
 async function saveOrderDetails(param) {
-   // console.log('saveOrderDetails', param);
+  console.log('saveOrderDetails', param);
   try {
     const orders = new Orders({
-
-      firstName: param.formvalues.firstName,
-      lastName: param.formvalues.lastName,
-      companyName: param.formvalues.companyName,
-      country: param.formvalues.country,
-      streetAddress: param.formvalues.streetAddress,
-      flat: param.formvalues.flat,
-      city: param.formvalues.city,
-      county: param.formvalues.county,
-      postcode: param.formvalues.postcode,
-      email: param.formvalues.email,
-      phoneNumber: param.formvalues.phoneNumber,
-      acknowledge: param.formvalues.acknowledge,
-      paymentIntentID: param.paymentIntent.id,
+      studentId: param.studentRegisterResponse.data.id,
+      // firstName: param.formvalues.firstName,
+      // lastName: param.formvalues.lastName,
+      // companyName: param.formvalues.companyName,
+      // country: param.formvalues.country,
+      // streetAddress: param.formvalues.streetAddress,
+      // flat: param.formvalues.flat,
+      // city: param.formvalues.city,
+      // county: param.formvalues.county,
+      // postcode: param.formvalues.postcode,
+      // email: param.formvalues.email,
+      // phoneNumber: param.formvalues.phoneNumber,
+      // acknowledge: param.formvalues.acknowledge,
+      paymentIntentId: param.paymentIntent.id,
+      paymentStatus: param.paymentIntent.status,
       amount: (param.paymentIntent.amount / 100).toFixed(2),
-      courses: param.coursesData
+      courses: param.findInstructorResponse
     })
     const orderdata = await orders.save();
+
+    const courseIds = param.findInstructorResponse.map(course => ({
+      id: course.courseId,
+      course_quantity: course.course_quantity,
+    }));
+
+
+    for (const course of courseIds) {
+      try {
+        const updatedCourse = await Courses.findByIdAndUpdate(
+          course.id,
+          {
+            $inc: { enrollment_capacity: -course.course_quantity },
+            $push: { students: param.studentRegisterResponse.data.id }
+          },
+          { new: true }
+        );
+
+        if (!updatedCourse) {
+          console.error(`Could not update enrollment capacity for course ID: ${course.id}`);
+        }
+      } catch (error) {
+        console.error(`Error updating enrollment capacity for course ID: ${course.id}`, error);
+      }
+    }
+
+
     if (orderdata) {
       return orderdata;
     } else {
@@ -532,128 +598,128 @@ async function saveOrderDetails(param) {
 
 /*****************************************************************************************/
 /*****************************************************************************************/
-async function sendWellcomeEmail(param) {
-  const { email, firstName } = param.body.formvalues;
-  const courses_data = param.body.courses_data;
- // console.log("courses_data--wellcome", courses_data);
+// async function sendWellcomeEmail(param) {
+//   const { email, firstName } = param.body.formvalues;
+//   const courses_data = param.body.courses_data;
+//   // console.log("courses_data--wellcome", courses_data);
 
-  const mailOptions = {
-    from: `"Booking App Live" <${config.mail_from_email}>`,
-    to: email,
-    subject: "Welcome to Booking App Live!",
-    html: `
-     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">Welcome to Booking App Live!</h1>
-      </div>
+//   const mailOptions = {
+//     from: `"Booking App Live" <${config.mail_from_email}>`,
+//     to: email,
+//     subject: "Welcome to Booking App Live!",
+//     html: `
+//      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+//       <!-- Header -->
+//       <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+//         <h1 style="color: white; margin: 0;">Welcome to Booking App Live!</h1>
+//       </div>
 
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Hello, ${firstName}!</h2>
+//       <!-- Body -->
+//       <div style="padding: 20px; background-color: #f9f9f9;">
+//         <h2 style="color: #333;">Hello, ${firstName}!</h2>
 
-        <p>We are thrilled to have you on board. Thank you for joining Booking App Live!</p>
+//         <p>We are thrilled to have you on board. Thank you for joining Booking App Live!</p>
 
-        <p>Our platform offers a wide range of features to help you manage your bookings efficiently. If you have any questions or need assistance, feel free to reach out to our support team.</p>
+//         <p>Our platform offers a wide range of features to help you manage your bookings efficiently. If you have any questions or need assistance, feel free to reach out to our support team.</p>
 
-        <p style="font-style: italic;">We look forward to serving you!</p>
+//         <p style="font-style: italic;">We look forward to serving you!</p>
 
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
+//         <p>Best regards,<br>The Booking App Live Team</p>
+//       </div>
 
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
-  };
+//       <!-- Footer -->
+//       <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+//         <p style="color: white; margin: 0; font-size: 12px;">
+//           &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+//         </p>
+//       </div>
+//     </div>
+//     `
+//   };
 
-  try {
-    const emailResult = await SendEmail(mailOptions);
-    return { success: true, message: "Wellcome email sent successfully" };
-  } catch (error) {
-    console.error("Error sending wellcome email:", error);
-    return { success: false, message: "Failed to send wellcome email" };
-  }
-}
+//   try {
+//     const emailResult = await SendEmail(mailOptions);
+//     return { success: true, message: "Wellcome email sent successfully" };
+//   } catch (error) {
+//     console.error("Error sending wellcome email:", error);
+//     return { success: false, message: "Failed to send wellcome email" };
+//   }
+// }
 
 /*****************************************************************************************/
 /*****************************************************************************************/
-async function sendEmailToAdmin(param) {
-  console.log("courses_data for admin ---", param.body);
-  const { email, firstName } = param.body.formvalues;
-  const  paymentIntent = param.body.paymentIntent;
-  const { classLink } = param.body;
-  const courses_data = param.body.courses_data || [];
-  const orderDetails = param.body.orderDetails;
+// async function sendEmailToAdmin(param) {
+//   // console.log("courses_data for admin ---", param.body);
+//   const { email, firstName } = param.body.formvalues;
+//   const paymentIntent = param.body.paymentIntent;
+//   const { classLink } = param.body;
+//   const courses_data = param.body.courses_data || [];
+//   const orderDetails = param.body.orderDetails;
 
-  const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;"> ${index+1}.${course.zoom_links}</p>`
-  );
- 
-  const courseTitlesHtml = courses_data
-  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-  .join(' ');
+//   const zoomLinks = classLink.map((course, index) =>
+//     `<p style="margin-left:75px;"> ${index + 1}.${course.zoom_links}</p>`
+//   );
+
+//   const courseTitlesHtml = courses_data
+//     .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+//     .join(' ');
 
 
-  const mailOptions = {
-    from: `"Booking App Live" <${config.mail_from_email}>`,
-    to: `"Booking App Live" <${config.mail_from_email}>`,
-    subject: "New Student Enrolled - Booking App Live",
-    html: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">New Student Enrolled</h1>
-      </div>
+//   const mailOptions = {
+//     from: `"Booking App Live" <${config.mail_from_email}>`,
+//     to: `"Booking App Live" <${config.mail_from_email}>`,
+//     subject: "New Student Enrolled - Booking App Live",
+//     html: `
+//       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+//       <!-- Header -->
+//       <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+//         <h1 style="color: white; margin: 0;">New Student Enrolled</h1>
+//       </div>
 
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Hello Admin,</h2>
+//       <!-- Body -->
+//       <div style="padding: 20px; background-color: #f9f9f9;">
+//         <h2 style="color: #333;">Hello Admin,</h2>
 
-        <p>We are excited to inform you that a new Student has Enrolled in Booking App Live!</p>
+//         <p>We are excited to inform you that a new Student has Enrolled in Booking App Live!</p>
 
-        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
-          <p><strong>Name:</strong> ${firstName}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
-          <p><strong>Order Id:</strong> ${orderDetails.id}</p>
-          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
-          <p><strong>Amount:</strong> ${(paymentIntent.amount / 100).toFixed(2)}</p>
-          <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
-          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
-        </div>
+//         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
+//           <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
+//           <p><strong>Name:</strong> ${firstName}</p>
+//           <p><strong>Email:</strong> ${email}</p>
+//           <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
+//           <p><strong>Order Id:</strong> ${orderDetails.id}</p>
+//           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
+//           <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
+//           <p><strong>Amount:</strong> ${(paymentIntent.amount / 100).toFixed(2)}</p>
+//           <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
+//           <p><strong>Zoom link:</strong> ${zoomLinks}</p>
+//         </div>
 
-        <p>Please ensure to welcome them and provide any necessary support.</p>
+//         <p>Please ensure to welcome them and provide any necessary support.</p>
 
-        <p style="font-style: italic;">Thank you for your continued support!</p>
+//         <p style="font-style: italic;">Thank you for your continued support!</p>
 
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
+//         <p>Best regards,<br>The Booking App Live Team</p>
+//       </div>
 
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
-  };
+//       <!-- Footer -->
+//       <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+//         <p style="color: white; margin: 0; font-size: 12px;">
+//           &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+//         </p>
+//       </div>
+//     </div>
+//     `
+//   };
 
-  try {
-    const emailResult = await SendEmail(mailOptions);
-    return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
-  } catch (error) {
-    console.error("Error sending student enrolled email to admin:", error);
-    return { success: false, message: "Failed to send student enrolled email to admin" };
-  }
-}
+//   try {
+//     const emailResult = await SendEmail(mailOptions);
+//     return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
+//   } catch (error) {
+//     console.error("Error sending student enrolled email to admin:", error);
+//     return { success: false, message: "Failed to send student enrolled email to admin" };
+//   }
+// }
 
 /*****************************************************************************************/
 /*****************************************************************************************/
@@ -668,7 +734,7 @@ async function getOrderDetails(id) {
   // console.log('getOrderDetails', id);
   try {
     // Find a specific order by ID
-    const order = await Orders.findById(id).select();
+    const order = await Orders.findById(id).select().populate('studentId');
     return order ? order : false;
   } catch (error) {
     console.error('Error fetching order details:', error);
@@ -678,7 +744,7 @@ async function getOrderDetails(id) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function savePaymentDetails(param) {
- // console.log('savePaymentDetails----param',param)
+  // console.log('savePaymentDetails----param',param)
   try {
     const orders = new Payments({
       userId: param.studentRegisterResponse.data.id,
@@ -693,6 +759,15 @@ async function savePaymentDetails(param) {
       courses: param.coursesData
     })
     const orderdata = await orders.save();
+
+    // const courseId = param.studentRegisterResponse.data.id;
+    // const updatedCourse = await Courses.findByIdAndUpdate(
+    //   courseId,
+    //   { $inc: { enrollment_capacity: -1 } }, 
+    //   { new: true } 
+    // );
+
+
     if (orderdata) {
       return orderdata;
     } else {
@@ -709,25 +784,42 @@ async function saveTopayOrderDetails(param) {
   try {
     const orders = new Orders({
 
-      firstName: param.formvalues.firstName,
-      lastName: param.formvalues.lastName,
-      companyName: param.formvalues.companyName,
-      country: param.formvalues.country,
-      streetAddress: param.formvalues.streetAddress,
-      flat: param.formvalues.flat,
-      city: param.formvalues.city,
-      county: param.formvalues.county,
-      postcode: param.formvalues.postcode,
-      email: param.formvalues.email,
-      phoneNumber: param.formvalues.phoneNumber,
-      acknowledge: param.formvalues.acknowledge,
       toPay: param.toPay,
       futurePay: param.futurePay,
-      paymentIntentID: param.paymentIntent.id,
+      studentId: param.studentRegisterResponse.data.id,
+      paymentIntentId: param.paymentIntent.id,
+      paymentStatus: param.paymentIntent.status,
       amount: (param.paymentIntent.amount / 100).toFixed(2),
-      courses: param.coursesData
+      courses: param.findInstructorResponse
     })
     const orderdata = await orders.save();
+
+    const courseIds = param.findInstructorResponse.map(course => ({
+      id: course.courseId,
+      course_quantity: course.course_quantity,
+    }));
+
+
+    for (const course of courseIds) {
+      try {
+        const updatedCourse = await Courses.findByIdAndUpdate(
+          course.id,
+          {
+            $inc: { enrollment_capacity: -course.course_quantity },
+            $push: { students: param.studentRegisterResponse.data.id }
+          },
+          { new: true }
+        );
+
+        if (!updatedCourse) {
+          console.error(`Could not update enrollment capacity for course ID: ${course.id}`);
+        }
+      } catch (error) {
+        console.error(`Error updating enrollment capacity for course ID: ${course.id}`, error);
+      }
+    }
+
+
     if (orderdata) {
       return orderdata;
     } else {
@@ -772,174 +864,195 @@ async function saveToPayPaymentDetails(param) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function sendEmailToPayStudent(param) {
-  const { paymentIntent, amount, email, name, toPay, futurePay, courses_data, classLink } = param.body;
-  const courseTitlesHtml = courses_data
-    .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-    .join(' ');
 
-  const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;">${index + 1}. ${course.zoom_links}</p>`
-  );
 
+  const { paymentIntent, studentRegisterResponse, findInstructorResponse, orderDetails, toPay, futurePay } = param.body;
+
+  const email = studentRegisterResponse.data.email;
+  const name = `${studentRegisterResponse.data.first_name} ${studentRegisterResponse.data.last_name}`;
+
+  let CourseData;
+
+  if (findInstructorResponse.length > 0) {
+    CourseData = findInstructorResponse.map(course => ({
+      course_title: course.course_title,
+      zoom_links: course.zoom_links,
+      course_quantity: course.course_quantity,
+      instructorName: course.instructorName || 'Assign soon',
+    }));
+  } else {
+
+    CourseData = [];
+  }
+
+  const PaymentData = {
+    paymentIntent_Id: paymentIntent.id,
+    paymentStatus: paymentIntent.status,
+    amount: (paymentIntent.amount / 100).toFixed(2),
+    order_Id: orderDetails.id,
+    toPayAmount: toPay.toFixed(2),
+    futurePayAmount: futurePay.toFixed(2)
+  }
+
+
+  const StudentData = {
+    StudentName: name,
+    studentId: studentRegisterResponse.data.id,
+    studentEmail: studentRegisterResponse.data.email,
+  }
+
+  // console.log('email--', email)
+  // console.log('name--', name)
+  // console.log('CourseData--', CourseData)
+  // console.log('PaymentData--', PaymentData)
+  // console.log('orderDetails--', orderDetails)
+
+  // Set custom data for email
+  const customData = {
+    title: 'Payment Confirmation',
+    emailTemplate: 'studentToPayPaymentConfirmation',
+    firstName: name,
+    copyrightDate: new Date().getFullYear(),
+    courseData: CourseData,
+    paymentData: PaymentData
+  };
+
+  // Set mail options
   const mailOptions = {
     from: `"Booking App Live" <${config.mail_from_email}>`,
+    replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
     to: email,
     subject: "Payment Confirmation - Booking App Live",
-    html: `
-     <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">Payment Confirmation</h1>
-      </div>
-
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Thank you for your payment, ${name}!</h2>
-
-        <p>We are pleased to inform you that your payment has been successfully processed.</p>
-
-        <!-- Payment Details -->
-        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Payment Intent ID:</strong> ${paymentIntent}</p>
-           <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
-          <p><strong>Amount Paid:</strong> £${(toPay || 0).toFixed(2)}</p>
-          <p><strong>Remaining Amount:</strong> £${(futurePay || 0).toFixed(2)}</p>
-          <p><strong>Zoom link:</strong> ${zoomLinks}</p>
-          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        </div>
-
-        <!-- Term & Condition -->
-        <div style="border: 1px solid #ddd; border-radius: 4px; padding: 15px; background-color: #fff;">
-          <p style="color: #ff0000; font-weight: bold;">
-            Term & Condition: The remaining amount of 
-            <strong>£${(futurePay || 0).toFixed(2)}</strong> must be paid at least 24 hours before the course starts. Otherwise, the amount of 
-            <strong>£${(toPay || 0).toFixed(2)}</strong> already paid will not be refunded.
-          </p>
-        </div>
-
-        <p>If you have any questions about your payment, please don't hesitate to contact our support team.</p>
-
-        <p style="font-style: italic;">Thank you for choosing our service!</p>
-
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
+    data: customData,
   };
+
+  const adminCustomData = {
+    title: 'Payment Confirmation',
+    emailTemplate: 'adminToPayPaymentConfirmation',
+    firstName: 'Admin',
+    copyrightDate: new Date().getFullYear(),
+    courseData: CourseData,
+    paymentData: PaymentData,
+    studentData: StudentData,
+  };
+
+  const mailOptionsAdmin = {
+    from: `"Booking App Live" <${config.mail_from_email}>`,
+    replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+    to: `"Booking App Live" <${config.mail_from_email}>`,
+    subject: "Payment Confirmation - Booking App Live",
+    data: adminCustomData,
+  };
+
 
   try {
     const emailResult = await SendEmail(mailOptions);
+    const adminEmailResult = await SendEmail(mailOptionsAdmin);
+    console.log('Email sent successfully:', emailResult);
     return { success: true, message: "Payment confirmation email sent successfully" };
   } catch (error) {
-    console.error("Error sending payment confirmation email:", error);
+    console.error('Error sending email:', error);
     return { success: false, message: "Failed to send payment confirmation email" };
   }
+
 }
 
 /*****************************************************************************************/
 /*****************************************************************************************/
-async function sendEmailToPayAdmin(param) {
-  const { email, firstName } = param.body.formvalues;
-  const toPay = param.body.toPay;
-  const futurePay = param.body.futurePay;
-  const paymentIntent = param.body.paymentIntent;
-  const courses_data = param.body.courses_data || [];
-  const orderDetails = param.body.orderDetails;
-  const { classLink } = param.body;
+// async function sendEmailToPayAdmin(param) {
+//   const { email, firstName } = param.body.formvalues;
+//   const toPay = param.body.toPay;
+//   const futurePay = param.body.futurePay;
+//   const paymentIntent = param.body.paymentIntent;
+//   const courses_data = param.body.courses_data || [];
+//   const orderDetails = param.body.orderDetails;
+//   const { classLink } = param.body;
 
-  const zoomLinks = classLink.map((course, index) =>
-    `<p style="margin-left:75px;">
-      ${index + 1}.${course.zoom_links}
-    </p>`
-  );
+//   const zoomLinks = classLink.map((course, index) =>
+//     `<p style="margin-left:75px;">
+//       ${index + 1}.${course.zoom_links}
+//     </p>`
+//   );
 
 
-  const courseTitlesHtml = courses_data
-  .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
-  .join(' ');
- 
+//   const courseTitlesHtml = courses_data
+//     .map((course, index) => `<p style="margin-left:75px;">${index + 1}. ${course.course_title}</p>`)
+//     .join(' ');
 
-  const mailOptions = {
-    from: `"Booking App Live" <${config.mail_from_email}>`,
-    to: `"Booking App Live" <${config.mail_from_email}>`,
-    subject: "New Student Enrolled - Booking App Live",
-    html: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-      <!-- Header -->
-      <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-        <h1 style="color: white; margin: 0;">New Student Enrolled</h1>
-      </div>
 
-      <!-- Body -->
-      <div style="padding: 20px; background-color: #f9f9f9;">
-        <h2 style="color: #333;">Hello Admin,</h2>
+//   const mailOptions = {
+//     from: `"Booking App Live" <${config.mail_from_email}>`,
+//     to: `"Booking App Live" <${config.mail_from_email}>`,
+//     subject: "New Student Enrolled - Booking App Live",
+//     html: `
+//       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
+//       <!-- Header -->
+//       <div style="background-color: #6772E5; padding: 20px; text-align: center;">
+//         <h1 style="color: white; margin: 0;">New Student Enrolled</h1>
+//       </div>
 
-        <p>We are excited to inform you that a new student has enrolled in Booking App Live!</p>
+//       <!-- Body -->
+//       <div style="padding: 20px; background-color: #f9f9f9;">
+//         <h2 style="color: #333;">Hello Admin,</h2>
 
-        <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
-          <p><strong>Name:</strong> ${firstName}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
-          <p><strong>Order Id:</strong> ${orderDetails.id}</p>
-          <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
-          <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
-          <p><strong>Amount Paid:</strong> £${toPay.toFixed(2)}</p>
-          <p><strong>Remaining Amount:</strong> £${futurePay.toFixed(2)}</p>
-          <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
-          <p><strong>ZoomLinks:</strong> <br> ${zoomLinks}</p>         
-        </div>
+//         <p>We are excited to inform you that a new student has enrolled in Booking App Live!</p>
 
-        <p>Please ensure to welcome them and provide any necessary support.</p>
+//         <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
+//           <h3 style="margin-top: 0; color: #333;">Student Details:</h3>
+//           <p><strong>Name:</strong> ${firstName}</p>
+//           <p><strong>Email:</strong> ${email}</p>
+//           <h3 style="margin-top: 0; color: #333;">Order Details:</h3>
+//           <p><strong>Order Id:</strong> ${orderDetails.id}</p>
+//           <h3 style="margin-top: 0; color: #333;">Payment Details:</h3>
+//           <p><strong>Payment Id:</strong> ${paymentIntent.id}</p>
+//           <p><strong>Amount Paid:</strong> £${toPay.toFixed(2)}</p>
+//           <p><strong>Remaining Amount:</strong> £${futurePay.toFixed(2)}</p>
+//           <p><strong>Course Title:</strong> <br> ${courseTitlesHtml}</p>
+//           <p><strong>ZoomLinks:</strong> <br> ${zoomLinks}</p>         
+//         </div>
 
-        <div style="margin-top: 20px; padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px;">
-          <h4 style="margin-top: 0; color: #333;">Terms & Conditions:</h4>
-          <p>
-            ${firstName} has chosen the Pay Deposits option. ${firstName} will pay the remaining amount of <strong>£${futurePay.toFixed(2)}</strong> at least 24 hours before the course start date. 
-            If ${firstName} fails to make the payment before the course start date, the amount already paid (<strong> £${toPay.toFixed(2)}</strong>) will not be refunded.
-          </p>
-        </div>
+//         <p>Please ensure to welcome them and provide any necessary support.</p>
 
-        <p style="font-style: italic;">Thank you for your continued support!</p>
+//         <div style="margin-top: 20px; padding: 10px; background-color: #fff; border: 1px solid #ddd; border-radius: 4px;">
+//           <h4 style="margin-top: 0; color: #333;">Terms & Conditions:</h4>
+//           <p>
+//             ${firstName} has chosen the Pay Deposits option. ${firstName} will pay the remaining amount of <strong>£${futurePay.toFixed(2)}</strong> at least 24 hours before the course start date. 
+//             If ${firstName} fails to make the payment before the course start date, the amount already paid (<strong> £${toPay.toFixed(2)}</strong>) will not be refunded.
+//           </p>
+//         </div>
 
-        <p>Best regards,<br>The Booking App Live Team</p>
-      </div>
+//         <p style="font-style: italic;">Thank you for your continued support!</p>
 
-      <!-- Footer -->
-      <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-        <p style="color: white; margin: 0; font-size: 12px;">
-          &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-        </p>
-      </div>
-    </div>
-    `
-  };
+//         <p>Best regards,<br>The Booking App Live Team</p>
+//       </div>
 
-  try {
-    const emailResult = await SendEmail(mailOptions);
-    return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
-  } catch (error) {
-    console.error("Error sending student enrolled email to admin:", error);
-    return { success: false, message: "Failed to send student enrolled email to admin" };
-  }
-}
+//       <!-- Footer -->
+//       <div style="padding: 20px; background-color: #6772E5; text-align: center;">
+//         <p style="color: white; margin: 0; font-size: 12px;">
+//           &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
+//         </p>
+//       </div>
+//     </div>
+//     `
+//   };
+
+//   try {
+//     const emailResult = await SendEmail(mailOptions);
+//     return { success: true, data: emailResult, message: "Student enrolled email to admin sent successfully" };
+//   } catch (error) {
+//     console.error("Error sending student enrolled email to admin:", error);
+//     return { success: false, message: "Failed to send student enrolled email to admin" };
+//   }
+// }
 /*****************************************************************************************/
 /*****************************************************************************************/
 async function getCourseZoomLink(req) {
   const courseIds = JSON.parse(req.query.courseIds);
-  console.log("Checking courseIds", courseIds);
+  //  console.log("Checking courseIds", courseIds);
   try {
 
     const courses = await Courses.find({ _id: { $in: courseIds } });
-    console.log("Found courses:", courses);
+    //  console.log("Found courses:", courses);
 
     if (!courses || courses.length === 0) {
       return false;
@@ -961,13 +1074,13 @@ async function getCourseZoomLink(req) {
  */
 async function addTicket(param) {
   let imageName = '';
-  if(param.body.screenshot) {
+  if (param.body.screenshot) {
     const parsedUrl = new URL(param.body.screenshot);  // Parse the URL
     const pathname = parsedUrl.pathname;  // Get the pathname part
     const parts = pathname.split('/');
     imageName = parts[parts.length - 1];
-  } 
-  
+  }
+
   try {
     const tickets = new Tickets({
       firstName: param.body.tfirstName,
@@ -976,15 +1089,15 @@ async function addTicket(param) {
       subject: param.body.subject,
       message: param.body.tmessage,
       status: param.body.status,
-      image_id:param.body.image_id,
-      screenshot:param.body.screenshot
+      image_id: param.body.image_id,
+      screenshot: param.body.screenshot
     })
 
     const ticketData = await tickets.save();
-    
+
     if (ticketData) {
       const customData = {
-        title:'New Ticket Email',
+        title: 'New Ticket Email',
         emailTemplate: 'newTicket',
         firstName: param.body.tfirstName,
         lastname: param.body.tlastName,
@@ -1007,12 +1120,12 @@ async function addTicket(param) {
     } else {
       return false;
     }
-  }  
+  }
   catch (error) {
     console.error("Error data has not found:", error);
     return false;
   }
-    
+
 };
 /*****************************************************************************************/
 /*****************************************************************************************/
@@ -1023,10 +1136,10 @@ async function addTicket(param) {
  * @returns objectArray|false
  */
 async function manegeContactUs(param) {
-  
+
   try {
     const customData = {
-      title:'Contact Us',
+      title: 'Contact Us',
       emailTemplate: 'contactForm',
       firstName: param.body.firstName,
       lastname: param.body.lastName,
@@ -1043,7 +1156,7 @@ async function manegeContactUs(param) {
     };
 
     const adminCustomData = {
-      title:'Contact Us',
+      title: 'Contact Us',
       emailTemplate: 'contactForm',
       firstName: 'Admin',
       lastname: param.body.lastName,
@@ -1061,18 +1174,18 @@ async function manegeContactUs(param) {
       data: adminCustomData
     };
     const adminEmailResult = await SendEmail(adminMailOptions);
-     
+
     if (adminEmailResult) {
       return true;
     } else {
       return false;
     }
-  }  
+  }
   catch (error) {
     console.error("Error data has not found:", error);
     return false;
   }
-    
+
 };
 /*****************************************************************************************/
 /*****************************************************************************************/
@@ -1135,3 +1248,275 @@ async function getAllTickets() {
 /*****************************************************************************************/
 /*****************************************************************************************/
 
+
+async function findInstructor(param) {
+  // console.log('param---find---instructor--',param)
+  try {
+    const coursesData = param.courses_data
+    const courseIds = coursesData.map(course => course.id);
+    //const courseQuantity = coursesData.map(course => course.quantity);
+
+    const enrichedCourses = await Courses.find({ _id: { $in: courseIds } });
+
+
+    const courses = enrichedCourses.map(course => {
+      // Find the matching quantity from coursesData
+      const matchedCourse = coursesData.find(data => data.id === course._id.toString());
+      return {
+        ...course.toObject(),
+        quantity: matchedCourse ? matchedCourse.quantity : 1,
+      };
+    });
+
+    const courseInstructorsArray = [];
+
+    // Loop through each course to find an instructor
+    for (const course of courses) {
+
+      const assignedInstructor = await Instructors.findOne({
+        assigned_courses: course._id
+      });
+
+      if (assignedInstructor) {
+        courseInstructorsArray.push({
+          instructorId: assignedInstructor._id.toString(),
+          instructorName: `${assignedInstructor.first_name} ${assignedInstructor.last_name}`,
+          courseId: course._id.toString(),
+          course_title: course.course_title,
+          zoom_links: course.zoom_links,
+          course_price: course.regular_price,
+          course_quantity: course.quantity,
+        });
+      } else {
+        // Otherwise, find an available instructor
+        const courseDates = course.course_schedule_dates.map(date =>
+          new Date(date).toISOString().split('T')[0]
+        );
+
+        const availableInstructors = await Instructors.find({
+          instructor_available_dates: {
+            $all: courseDates.map(date => ({
+              $elemMatch: { date: new Date(date), status: "Free" }
+            }))
+          },
+          isActive: true
+        });
+
+        if (!availableInstructors || availableInstructors.length === 0) {
+          console.log(`No available instructors found for Course ID: ${course._id}`);
+          courseInstructorsArray.push({
+            instructorId: null,
+            instructorName: null,
+            courseId: course._id.toString(),
+            course_title: course.course_title,
+            zoom_links: course.zoom_links,
+            course_price: course.regular_price,
+            course_quantity: course.quantity,
+          });
+          continue;
+        }
+
+        const instructor = availableInstructors[0];
+
+        const updatedDates = instructor.instructor_available_dates.map(dateObj => {
+          const normalizedDate = dateObj.date.toISOString().split('T')[0];
+          if (courseDates.includes(normalizedDate) && dateObj.status === "Free") {
+            dateObj.status = "Engaged";
+            dateObj.course_assign = course.course_title;
+          }
+          return dateObj;
+        });
+
+        await Instructors.updateOne(
+          { _id: instructor._id },
+          {
+            $set: { instructor_available_dates: updatedDates },
+            $addToSet: { assigned_courses: course._id }
+          }
+        );
+
+        courseInstructorsArray.push({
+          instructorId: instructor._id.toString(),
+          instructorName: `${instructor.first_name} ${instructor.last_name}`,
+          instructoremail: instructor.email,
+          courseId: course._id.toString(),
+          course_title: course.course_title,
+          zoom_links: course.zoom_links,
+          course_price: course.regular_price,
+          course_quantity: course.quantity,
+        });
+
+
+        // Send email to instructor
+        const instructorCourseData = {
+          course_title: course.course_title,
+          zoom_links: course.zoom_links
+        };
+
+        const instructorCustomData = {
+          title: 'Course Assigned',
+          firstName: `${instructor.first_name} ${instructor.last_name}`,
+          emailTemplate: 'instructorCourseAssigned',
+          copyrightDate: new Date().getFullYear(),
+          courseData: instructorCourseData,
+        };
+
+        const mailOptionsInstructor = {
+          from: `"Booking App Live" <${config.mail_from_email}>`,
+          to: instructor.email,
+          subject: "Course assigned - Booking App Live",
+          data: instructorCustomData,
+        };
+
+        try {
+          const emailResult = await SendEmail(mailOptionsInstructor);
+          // console.log(`Email sent to ${instructor.email}:`, emailResult);
+        } catch (error) {
+          console.error(`Failed to send email to ${instructor.email}:`, error);
+        }
+
+      }
+    }
+
+    // console.log('courseInstructorsArray--- final response', courseInstructorsArray);
+
+    return { status: true, data: courseInstructorsArray };
+  } catch (error) {
+    console.error("Error finding instructors for courses:", error);
+    return { status: false, data: null };
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function getCourseById(param) {
+  // console.log('parem in getCourseById--', param)
+  try {
+
+    const result = await Courses.findById(param.id)
+      .populate({
+        path: 'reviews',
+        populate: {
+          path: 'studentId',
+          select: 'first_name last_name'
+        }
+      })
+      .exec();
+    console.log(result)
+    if (result) return result;
+
+  } catch (error) {
+    console.error("Error finding course:", error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function courseReviewVerify(param) {
+  // console.log('parem in courseReviewVerify--', param)
+  const email = param.verifyData.email;
+  const courseId = param.verifyData.courseId;
+  try {
+
+    const course = await Courses.findById(courseId)
+      .populate({
+        path: 'students',
+      })
+      .exec();
+
+    console.log('course--', course)
+    if (!course) {
+      console.log('Course not found');
+      return false;
+    }
+
+
+    const matchingStudent = course.students.find(
+      (student) => student && student.email === email
+    );
+
+    if (matchingStudent) {
+      // console.log('Verification successful, studentId:', matchingStudent._id);
+      return matchingStudent._id;
+    }
+
+    return false;
+
+  } catch (error) {
+    console.error('Error verifying course reviews:', error);
+    return false;
+  }
+
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function addReview(param) {
+  // console.log('param in addReview--', param);
+  const { reviewData, courseId, studentId } = param;
+
+  try {
+
+    const existingReview = await Reviews.findOne({ courseId, studentId });
+
+    if (existingReview) {
+
+      existingReview.review = {
+        title: reviewData.title,
+        description: reviewData.description,
+      };
+      existingReview.rating = reviewData.rating;
+      existingReview.isActive = true;
+
+      const updatedReview = await existingReview.save();
+
+
+      const course = await Courses.findById(courseId);
+
+      if (!course) {
+        console.log('Course not found');
+        return { success: false, message: 'Course not found' };
+      }
+
+      // console.log('Review updated successfully');
+      return course;
+    } else {
+
+      const newReview = new Reviews({
+        review: {
+          title: reviewData.title,
+          description: reviewData.description,
+        },
+        rating: reviewData.rating,
+        isActive: true,
+        studentId: studentId,
+        courseId: courseId,
+      });
+
+      const savedReview = await newReview.save();
+
+      const course = await Courses.findByIdAndUpdate(
+        courseId,
+        { $push: { reviews: savedReview._id } },
+        { new: true, useFindAndModify: false }
+      );
+
+      if (!course) {
+        console.log('Course not found');
+        return { success: false, message: 'Course not found' };
+      }
+
+      // console.log('Review saved and course updated successfully');
+      return { success: true, savedReview, course };
+    }
+  } catch (error) {
+    console.error('Error adding or updating review:', error);
+    return { success: false, message: 'Error adding or updating review', error };
+  }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/

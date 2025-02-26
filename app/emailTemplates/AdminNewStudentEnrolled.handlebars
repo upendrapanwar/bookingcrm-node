@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+<body style="font-family: 'Poppins', Arial, sans-serif">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+            <td align="center" style="padding: 20px;">
+                <table class="content" width="600" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: 1px solid #cccccc;">
+                    <!-- Header -->
+                    <tr>
+                        <td class="header" style="background-color: #345C72; padding: 40px; text-align: center; color: white; font-size: 24px;">
+                        {{title}}
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 20px;">
+                            <h2 style="color: #333;">Hello {{name}}!</h2>
+
+                            <p>We are excited to inform you that a new user has successfully enrolled on the Booking App Live platform!</p>
+
+                            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 20px 0;">
+                                <tr>
+                                    <td
+                                        style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; padding: 20px;">
+                                        <h3 style="margin-top: 0; color: #363535;">Student Details:</h3>
+                                         <p><strong>Name:</strong> {{studentData.StudentName}}</p>
+                                        <p><strong>Email:</strong> {{studentData.studentEmail}}</p>
+                                        <p><strong>Id:</strong> {{studentData.studentId}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p>Please ensure the user is granted appropriate access to the platform and provide any necessary support if required.</p>
+
+                            <p style="font-style: italic;">Thank you for your dedication!</p>
+                            <p>Best regards,<br>The Booking App Live Team</p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer" style="background-color: #333333; padding: 40px; text-align: center; color: white; font-size: 14px;">
+                        Copyright &copy; {{copyrightDate}} | Booking App Live. All rights reserved.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

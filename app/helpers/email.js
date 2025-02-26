@@ -43,6 +43,11 @@ const sendEmail = async (emailData) => {
                 message: emailData.data.message,
                 ticketUrl: emailData.data.ticketUrl,
                 copyrightDate: emailData.data.copyrightDate,
+                scheduleSetupUrl: emailData.data.scheduleSetupUrl,
+                courseData: emailData.data.courseData,
+                paymentData: emailData.data.paymentData,
+                studentData: emailData.data.studentData,
+           
             },
             attachments: [{ filename: emailData.data.filename, path: emailData.data.path }],
             //text: text,

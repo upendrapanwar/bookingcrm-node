@@ -24,6 +24,7 @@ const {
     Instructors,
     Orders,
     Payments,
+    Reviews
 } = require("../helpers/db");
 
 module.exports = {
@@ -47,6 +48,11 @@ module.exports = {
     getAllPaymentDetails,
     getAllOrderDetails,
     getAllUsers,
+    getOrders,
+    deleteOrder,
+    getOrderById,
+    deleteUser,
+    deleteCourseReview,
 };
 
 /*****************************************************************************************/
@@ -228,7 +234,19 @@ async function getAllcategories(param) {
  * @returns Object|null
  */
 async function getCourseById(param) {
-    const result = await Courses.findById(param.id).select();
+    // console.log('getCourseById---param',param)
+    const result = await Courses.findById(param.id)
+    .populate({
+        path: 'reviews',
+        populate: {
+            path: 'studentId', 
+            select: 'first_name last_name' 
+        }
+    })
+    .exec();
+        // .select();
+
+
 
     if (result) return result;
 
@@ -296,7 +314,7 @@ async function updateCourse(param) {
 async function deleteCourse(param) {
     try {
         const deletedCourse = await Courses.findOneAndDelete({ _id: param.id });
-    
+
         if (deletedCourse) {
             return deletedCourse; // Return the deleted document if found and deleted
         } else {
@@ -384,12 +402,26 @@ async function addInstructor(param) {
         const instructorData = await instructor.save();
         if (instructorData) {
 
-            const emailSent = await sendEmailToInstructor(instructorData);
-            if (emailSent) {
-                console.log('Email sent successfully');
-            } else {
-                console.log('Failed to send email');
+            //  console.log('instructorData--', instructorData)
+            const scheduleSetupUrl = `${config.instructor_url}?id=${instructorData._id}&name=${instructorData.first_name}`;
+            const customData = {
+                title: 'Instructor Wellcome',
+                emailTemplate: 'instructorWellcome',
+                firstName: instructorData.first_name,
+                lastname: instructorData.last_name,
+                scheduleSetupUrl: scheduleSetupUrl,
+                copyrightDate: new Date().getFullYear()
             }
+            const mailOptions = {
+                from: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+                replyTo: `"Booking App Live" <${process.env.ADMIN_EMAIL}>`,
+                to: `"Booking App Live" <${instructorData.email}>`,
+                subject: "New Instructor Welcome - Booking App Live",
+                data: customData
+            };
+
+            const emailResult = await SendEmail(mailOptions);
+            console.error('emailResult--', emailResult)
 
             return instructorData;
         } else {
@@ -431,9 +463,9 @@ async function getInstructors(param) {
  * @returns Object|null
  */
 async function getInstructorById(param) {
-    // console.log('InstructorsById-----',param)
-    const result = await Instructors.findById(param.id).select();
-    // console.log('InstructorsById---result--',result)
+    // console.log('InstructorsById-----', param)
+    const result = await Instructors.findById(param.id).select().populate('assigned_courses');
+    // console.log('InstructorsById---result--', result)
     if (result) return result;
 
     return false;
@@ -503,99 +535,6 @@ async function updateInstructor(param) {
     }
 }
 
-/*****************************************************************************************/
-/*****************************************************************************************/
-/**
- * Manages send Email to Instructor operations
- *
- * @param  {Object} param 
- *
- * @returns Object|null
- */
-async function sendEmailToInstructor(instructorData) {
-    console.log('instructorData----send email---', instructorData)
-    const { email, first_name, _id } = instructorData;
-    const scheduleSetupUrl = `${config.instructor_url}?id=${_id}&name=${first_name}`;
-    const mailOptions = {
-        from: `"Booking App Live" <${config.mail_from_email}>`,
-        to: email,
-        subject: "New Instructor Welcome - Booking App Live",
-        html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #555;">
-        <!-- Header -->
-        <div style="background-color: #6772E5; padding: 20px; text-align: center;">
-            <h1 style="color: white; margin: 0;">Welcome to Booking App Live!</h1>
-        </div>
-    
-        <!-- Body -->
-        <div style="padding: 20px; background-color: #f9f9f9;">
-            <h2 style="color: #333;">Hello ${first_name} ,</h2>
-            
-            <p>Welcome aboard! We're thrilled to have you join Booking App Live as an instructor.</p>
-
-            <div style="background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #333;">Next Steps:</h3>
-            <p>To get started, please set up your teaching schedule by clicking the button below:</p>
-
-            <div style="text-align: center; margin: 25px 0;">
-            <a href="${scheduleSetupUrl}" style="background-color: #6772E5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; display: inline-block;">Set Your Schedule</a>
-        </div>
-        <p style="font-size: 14px; color: #666;">
-            This link will take you to your instructor portal where you can:
-        </p>
-        <ul style="font-size: 14px; color: #666;">
-            <li>Choose your preferred teaching days</li>
-        </ul>
-    </div>
-    
-    <p>If you have any questions or need assistance, our support team is here to help!</p>
-    
-    <p>Best regards,<br>The Booking App Live Team</p>
-    </div>
-    
-          <!-- Footer -->
-          <div style="padding: 20px; background-color: #6772E5; text-align: center;">
-            <p style="color: white; margin: 0; font-size: 12px;">
-              &copy; ${new Date().getFullYear()} Booking App Live. All rights reserved.
-            </p>
-          </div>
-        </div>
-        `
-    };
-    // try {
-    //     // Configure Nodemailer transport
-    //     const transporter = nodemailer.createTransport({
-    //         service: 'Gmail', // Or another service like Outlook, Yahoo, etc.
-    //         auth: {
-    //             user: process.env.EMAIL, // Your email address
-    //             pass: process.env.EMAIL_PASSWORD, // Your email password or app-specific password
-    //         },
-    //     });
-
-    //     // Email options
-    //     const mailOptions = {
-    //         from: 'your-email@example.com', // Sender address
-    //         to: email, // Receiver's email
-    //         subject: 'Welcome to the Team!', // Email subject
-    //         text: `Hello ${firstName},\n\nWelcome to our team! We are excited to have you on board.\n\nBest Regards,\nTeam`, // Plain text body
-    //     };
-
-    //     // Send email
-    //     await transporter.sendMail(mailOptions);
-    //     return true; // Email sent successfully
-    // } catch (error) {
-    //     console.error('Error sending email:', error);
-    //     return false; // Failed to send email
-    // }
-
-    try {
-        const emailResult = await SendEmail(mailOptions);
-        return { success: true, message: "Instructor Wellcome email to Instructor sent successfully" };
-    } catch (error) {
-        console.error("Error sending Instructor Wellcome email to Instructor:", error);
-        return { success: false, message: "Failed to send Instructor Wellcome email to Instructor" };
-    }
-}
 /*****************************************************************************************/
 /*****************************************************************************************/
 
@@ -686,3 +625,117 @@ async function getAllUsers() {
 
     return false;
 }
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function getOrders(param) {
+    try {
+        const result = await Orders.find()
+            .populate('studentId')
+            .select()
+            .sort({ createdAt: 'desc' })
+            .exec();
+
+        if (result && result.length > 0) return result;
+
+        return false;
+    } catch (error) {
+        console.error('Error in getting ordres:', error);
+        throw new Error('Could not get orders. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function deleteOrder(param) {
+    // console.log('param--delete order---', param)
+    const id = param.orderId.id
+    try {
+        const deletedOrder = await Orders.findOneAndDelete({ _id: id });
+
+        if (deletedOrder) {
+            return deletedOrder;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        throw new Error('Could not delete course. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function getOrderById(param) {
+    // console.log('getOrderById-----', param)
+    try {
+        const result = await Orders.findById(param.id).select().populate('studentId').populate('courses.courseId');
+        // console.log('getOrderById---result--', result)
+        if (result) return result;
+
+        return false;
+    } catch (error) {
+        console.error('Error getting order:', error);
+        throw new Error('Could not get order. Please try again later.');
+    }
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function deleteUser(param) {
+    console.log('param--delete order---', param)
+    const id = param.UserId.id
+    try {
+        const deletedUser = await User.findOneAndDelete({ _id: id });
+
+        if (deletedUser) {
+            return deletedUser;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error deleting course:', error);
+        throw new Error('Could not delete course. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+async function deleteCourseReview(param) {
+    console.log('deleteCourseReview---',param)
+    const { reviewId, courseId } = param;
+    
+    try {
+        // Step 1: Remove reviewId from the reviews array in the Course document
+        const updatedCourse = await Courses.findByIdAndUpdate(
+            courseId,
+            { $pull: { reviews: reviewId } }, // Removes reviewId from reviews array
+            { new: true } // Returns the updated document
+        );
+
+        if (!updatedCourse) {
+            throw new Error('Course not found. Cannot remove review.');
+        }
+
+        // Step 2: Delete the review from the Review collection
+        const deletedReview = await Reviews.findByIdAndDelete(reviewId);
+
+        if (!deletedReview) {
+            throw new Error('Review not found. Cannot delete.');
+        }
+
+        // Step 3: Return success response
+        return {
+            success: true,
+            message: 'Review successfully deleted.',
+            data: { updatedCourse, deletedReview }
+        };
+    } catch (error) {
+        console.error('Error deleting course review:', error);
+        throw new Error('Could not delete course review. Please try again later.');
+    }
+}
+/*****************************************************************************************/
+/*****************************************************************************************/

@@ -5,5 +5,6 @@ module.exports = {
     Orders : require('../models/orders.model'),
     Instructors : require('../models/instructors.model'),
     Payments : require('../models/payments.model'),
-    Tickets: require('../models/tickets.model')
+    Tickets: require('../models/tickets.model'),
+    Reviews: require('../models/reviews.model')
 }

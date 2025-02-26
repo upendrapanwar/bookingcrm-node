@@ -25,8 +25,8 @@ router.get("/get-order-details", getOrderDetails);
 
 //node Mailer
 router.post("/send-payment-email", sendPaymentEmail);
-router.post("/send-wellcome-email", sendWellcomeEmail);
-router.post("/send-student-enrolled-email", sendEmailToAdmin);
+// router.post("/send-wellcome-email", sendWellcomeEmail);
+// router.post("/send-student-enrolled-email", sendEmailToAdmin);
 router.post("/send-topay-payment-email", sendEmailToPayStudent);
 router.post("/send-topay-student-enrolled-email", sendEmailToPayAdmin);
 
@@ -40,6 +40,13 @@ router.get("/get-courses-zoomlink", getCourseZoomLink);
 router.post("/add-ticket",addTicket);
 router.post("/contact-us",manegeContactUs);
 router.get('/get-all-tickets', getAllTickets);
+
+router.post("/find-instructor",findInstructor);
+router.get("/get-course-byId/:id",getCourseById);
+router.post("/coursereview-email-verify",courseReviewVerify);
+router.post("/add-review",addReview);
+
+
 
 module.exports = router;
 
@@ -239,28 +246,28 @@ function saveOrderDetails(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-function sendWellcomeEmail(req, res, next) {
-  userService.sendWellcomeEmail(req)
-    .then((result) => {
-      return result ? res.json({ status: true, message: "WellcomeEmail sent successfully." }) : res.json({ status: false, message: "Error in sending WellcomeEmail email." });
-    })
-    .catch((err) => {
-      console.error('Error in sendWellcomeEmail controller:', err);
-      next(res.json({ status: false, message: err.message }));
-    });
-}
+// function sendWellcomeEmail(req, res, next) {
+//   userService.sendWellcomeEmail(req)
+//     .then((result) => {
+//       return result ? res.json({ status: true, message: "WellcomeEmail sent successfully." }) : res.json({ status: false, message: "Error in sending WellcomeEmail email." });
+//     })
+//     .catch((err) => {
+//       console.error('Error in sendWellcomeEmail controller:', err);
+//       next(res.json({ status: false, message: err.message }));
+//     });
+// }
 /*****************************************************************************************/
 /*****************************************************************************************/
-function sendEmailToAdmin(req, res, next) {
-  userService.sendEmailToAdmin(req)
-    .then((result) => {
-      return result ? res.json({ status: true, message: "student enrolled email sent successfully." }) : res.json({ status: false, message: "Error in sending email to admin." });
-    })
-    .catch((err) => {
-      console.error('Error in sendEmailToAdmin controller:', err);
-      next(res.json({ status: false, message: err.message }));
-    });
-}
+// function sendEmailToAdmin(req, res, next) {
+//   userService.sendEmailToAdmin(req)
+//     .then((result) => {
+//       return result ? res.json({ status: true, message: "student enrolled email sent successfully." }) : res.json({ status: false, message: "Error in sending email to admin." });
+//     })
+//     .catch((err) => {
+//       console.error('Error in sendEmailToAdmin controller:', err);
+//       next(res.json({ status: false, message: err.message }));
+//     });
+// }
 /*****************************************************************************************/
 /*****************************************************************************************/
 /**
@@ -363,3 +370,52 @@ function getAllTickets(req, res, next) {
 /*****************************************************************************************/
 /*****************************************************************************************/
 
+function findInstructor(req, res, next) {
+  userService.findInstructor(req.body)
+    .then(allTickets => allTickets ? res.status(200).json({ status: true, data: allTickets }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function getCourseById(req, res, next) {
+  //console.log('getCourseById',req)
+  userService.getCourseById(req.params)
+    .then(course => course ? res.status(200).json({ status: true, data: course }) : res.status(400).json({ status: false, message: msg.common.no_data_err, data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+}
+
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function courseReviewVerify(req, res, next) {
+  userService.courseReviewVerify(req.body)
+    // .then(Verify => Verify ? res.status(200).json({ status: true, data: Verify }) : res.status(400).json({ status: false, message:"Verification failed", data: [] }))
+    // .catch(err => next(res.json({ status: false, message: err })));
+
+    .then((result) => {
+      return result ? res.json({ status: true, message: "Verification successfully.", data: result }) : res.json({ status: false, message: "Verification failed." });
+    })
+    .catch((err) => {
+      console.error('Error in Verification controller:', err);
+      next(res.json({ status: false, message: err.message }));
+    });
+}
+/*****************************************************************************************/
+/*****************************************************************************************/
+
+function addReview(req, res, next) {
+  userService.addReview(req.body)
+    .then(addedReview => addedReview ? res.status(200).json({ status: true, data: addedReview }) : res.status(400).json({ status: false, message:"Review adding failed.", data: [] }))
+    .catch(err => next(res.json({ status: false, message: err })));
+
+    // .then((result) => {
+    //   return result ? res.json({ status: true, message: "Verification successfully.", data: result }) : res.json({ status: false, message: "Verification failed." });
+    // })
+    // .catch((err) => {
+    //   console.error('Error in Verification controller:', err);
+    //   next(res.json({ status: false, message: err.message }));
+    // });
+}
+/*****************************************************************************************/
+/*****************************************************************************************/

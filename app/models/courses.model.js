@@ -26,6 +26,8 @@ const courseSchema = new Schema({
     course_information: { type: String, required: false, default: '' },
     completing_the_course: { type: String, required: false, default: '' },
     why_use_our_training: { type: String, required: false, default: '' },
+    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }],
+    reviews: [{ type: Schema.Types.ObjectId, ref: 'Reviews' }],
 }, {
     timestamps: true
 });
