@@ -38,7 +38,6 @@ const {
   Tickets,
   Reviews,
   Instructor,
-  Tickets,
   TicketReplies
 } = require("../helpers/db");
 
@@ -80,13 +79,13 @@ module.exports = {
   addReview,
   getOpenTickets,
   getWaitTickets,
-  getClosedTickets,
+  // getClosedTickets,
   getAllTickets,
-  getRepliesDetailsId,
-  setReplyById,
-  setStausById,
-  deleteSelectedTickets,
-  emailExists
+  // getRepliesDetailsId,
+  // setReplyById,
+  // setStausById,
+  // deleteSelectedTickets,
+  // emailExists
 };
 
 /*****************************************************************************************/

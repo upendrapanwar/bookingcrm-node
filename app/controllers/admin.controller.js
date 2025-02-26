@@ -26,13 +26,11 @@ router.put('/update_course_status', updateCourseStatus);
 router.get("/get-payment-details", getAllPaymentDetails)
 router.get("/get-all-order-details", getAllOrderDetails);
 router.get('/get-all-users', getAllUsers);
-<<<<<<< HEAD
 router.get('/get_Orders', getOrders);
 router.delete('/delete_order', deleteOrder);
 router.get('/get_order_byId/:id', getOrderById);
 router.delete('/delete_User', deleteUser);
 router.delete('/delete-course-review', deleteCourseReview);
-=======
 router.post('/delete-selected-tickets', deleteSelectedTickets);
 router.post('/change-ticket-status', setStausById);
 router.get('/get-all-tickets', getAllTickets);
@@ -43,7 +41,6 @@ router.post('/save-ticket-reply', setReplyById);
 router.get('/get-replies-details/:id', getRepliesDetailsId);
 router.post("/add-ticket",addTicket);
 
->>>>>>> 7a51b0b88c2e0176d1717db355a6e7dfb2ec18f2
 
 module.exports = router;
 
@@ -627,7 +624,6 @@ function getAllUsers(req, res, next) {
 }
 /*****************************************************************************************/
 /*****************************************************************************************/
-<<<<<<< HEAD
 
 function getOrders(req, res, next) {
     adminService
@@ -758,7 +754,6 @@ function deleteCourseReview(req, res, next) {
         );
 }
 
-=======
 /**
 * Function delete selected tickets by single or multiple ids
 * 
@@ -894,6 +889,5 @@ function addTicket(req, res, next) {
     .then(result => result ? res.status(200).json({ status: true, data: result }) : res.status(400).json({ status: false, message: "Error in getting found data.", data: [] }))
     .catch(err => next(res.json({ status: false, message: err })));
 }
->>>>>>> 7a51b0b88c2e0176d1717db355a6e7dfb2ec18f2
 /*****************************************************************************************/
 /*****************************************************************************************/
